@@ -218,8 +218,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🆘 Support
 
 - **Documentation**: [API Docs](http://localhost:8000/docs)
-- **Issues**: [GitHub Issues](https://github.com/your-repo/issues)
-- **Email**: support@certificateverification.com
+- **Issues**: [GitHub Issues](https://github.com/VishalRaut2106/Certify_ai/issues)
+- **Email**: vishalraut.contact@gmail.com
 
 ## 🎯 Roadmap
 
