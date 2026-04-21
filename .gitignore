@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+backend/venv/
+
+# Environment files
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env.local
+
+# Logs and local databases
+*.log
+*.db
+*.sqlite3
+backend_server.log
+certificate_verification.db
+
+# Uploads and generated files
+backend/uploads/
+
+# Node / Next.js
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+dist/
+out/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
