@@ -4,8 +4,12 @@ from pdf2image import convert_from_path
 import numpy as np
 import json
 import os
+import sys
 
-POPPLER_PATH = r'D:\CDS\SOFTWARE\POPPLER\poppler-25.12.0\Library\bin'
+if sys.platform == 'win32':
+    POPPLER_PATH = os.path.join(os.path.dirname(__file__), 'poppler', 'poppler-24.08.0', 'Library', 'bin')
+else:
+    POPPLER_PATH = None  # auto-detected on Linux
 
 def decode_qr(image_path):
     # Handle PDF
@@ -16,7 +20,18 @@ def decode_qr(image_path):
     else:
         image = cv2.imread(image_path)
 
+    if image is None:
+        return None
+
     qr_codes = decode(image)
+
+    if not qr_codes:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        qr_codes = decode(gray)
+
+    if not qr_codes:
+        _, thresh = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        qr_codes = decode(thresh)
 
     if not qr_codes:
         return None

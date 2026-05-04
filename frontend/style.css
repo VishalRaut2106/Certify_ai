@@ -318,6 +318,11 @@ body {
   color: #be123c;
 }
 
+.verdict-badge.manual {
+  background: #fffbeb;
+  color: #b45309;
+}
+
 /* Fields Header */
 .fields-header {
   display: grid;

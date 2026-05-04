@@ -132,9 +132,25 @@ function renderResult(data) {
   toggle(resultEl, true);
 
   const isVerified = data.verdict === 'Verified';
-  verdictBadge.className  = 'verdict-badge ' + (isVerified ? 'verified' : 'fraud');
-  verdictIcon.textContent = isVerified ? '✓' : '✗';
-  verdictText.textContent = isVerified ? 'Certificate Verified' : 'Certificate Fraudulent';
+  const isManual = data.verdict && data.verdict.startsWith('Manual');
+  
+  let badgeClass = 'fraud';
+  let icon = '✗';
+  let text = 'Certificate Fraudulent';
+
+  if (isVerified) {
+    badgeClass = 'verified';
+    icon = '✓';
+    text = 'Certificate Verified';
+  } else if (isManual) {
+    badgeClass = 'manual';
+    icon = '⚠️';
+    text = data.verdict;
+  }
+
+  verdictBadge.className  = 'verdict-badge ' + badgeClass;
+  verdictIcon.textContent = icon;
+  verdictText.textContent = text;
 
   fieldsEl.innerHTML = '';
   const fieldDefs = [

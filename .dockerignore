@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+venv/
+.venv/
+*.egg-info/
+
+# Env
+.env
+*.env
+
+# Local dev artifacts
+backend/poppler/
+backend/venv/
+backend/uploads/
+backend/*.log
+backend/*.db
+backend/*.xlsx
+backend/temp_*
+backend/dummy.png
+
+# Git
+.git/
+.gitignore
+
+# OS
+.DS_Store
+Thumbs.db

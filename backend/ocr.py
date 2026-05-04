@@ -3,15 +3,17 @@ from PIL import Image
 from pdf2image import convert_from_path
 import re
 import os
+import sys
 
-# Tesseract path
-pytesseract.pytesseract.tesseract_cmd = r'D:\CDS\SOFTWARE\Tesseract\tesseract.exe'
-
-# Tessdata path
-os.environ['TESSDATA_PREFIX'] = r'D:\CDS\SOFTWARE\Tesseract\tessdata'
-
-# Poppler path
-POPPLER_PATH = r'D:\CDS\SOFTWARE\POPPLER\poppler-25.12.0\Library\bin'
+# --- Auto-detect paths based on OS ---
+if sys.platform == 'win32':
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+    os.environ['TESSDATA_PREFIX'] = r'C:\Program Files\Tesseract-OCR\tessdata'
+    POPPLER_PATH = os.path.join(os.path.dirname(__file__), 'poppler', 'poppler-24.08.0', 'Library', 'bin')
+else:
+    # Linux (Docker / Cloud Run) — installed via apt-get
+    pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+    POPPLER_PATH = None  # pdf2image auto-detects on Linux
 
 # date_pattern = re.compile(r'(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+\d{4}')
 # date_pattern = re.compile(r'(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s*\d{4}')
@@ -61,17 +63,29 @@ POPPLER_PATH = r'D:\CDS\SOFTWARE\POPPLER\poppler-25.12.0\Library\bin'
 date_pattern = re.compile(r'(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s*\d{4}')
 
 def extract_text(image_path):
-    if image_path.lower().endswith('.pdf'):
-        pages = convert_from_path(image_path, dpi=200, poppler_path=POPPLER_PATH)
-        image = pages[0]
-    else:
-        image = Image.open(image_path)
+    image = None
+    raw_text = ""
+    try:
+        if image_path.lower().endswith('.pdf'):
+            pages = convert_from_path(image_path, dpi=200, poppler_path=POPPLER_PATH)
+            image = pages[0]
+        else:
+            image = Image.open(image_path)
+            image.load()
 
-    raw_text = pytesseract.image_to_string(image, lang='eng')
+        raw_text = pytesseract.image_to_string(image, lang='eng')
+    except Exception as e:
+        print(f"OCR Error on {image_path}: {e}")
+    finally:
+        if image and hasattr(image, 'close'):
+            try:
+                image.close()
+            except:
+                pass
 
     lines = [line.strip() for line in raw_text.split('\n') if line.strip()]
 
-    extracted = {'name': None, 'course': None, 'date': None}
+    extracted = {'name': None, 'course': None, 'date': None, 'raw_text': raw_text}
 
     for i, line in enumerate(lines):
         lower = line.lower()

@@ -34,14 +34,30 @@ async def verify_certificate(certificate: UploadFile = File(...)):
         qr_data = decode_qr(temp_path)
 
         if not qr_data:
-            return {"error": "QR code could not be decoded"}
+            return {
+                "name":    {"ocr": extracted.get("name"),   "qr": None, "match": False},
+                "course":  {"ocr": extracted.get("course"), "qr": None, "match": False},
+                "date":    {"ocr": extracted.get("date"),   "qr": None, "match": False},
+                "verdict": "Manual Review - QR Unreadable"
+            }
 
         result = compare_fields(extracted, qr_data)
         return result
 
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return {
+            "name":    {"ocr": None, "qr": None, "match": False},
+            "course":  {"ocr": None, "qr": None, "match": False},
+            "date":    {"ocr": None, "qr": None, "match": False},
+            "verdict": "Manual Review - Processing Error"
+        }
     finally:
         if os.path.exists(temp_path):
-            os.remove(temp_path)
+            try:
+                os.remove(temp_path)
+            except:
+                pass
 
 
 def process_single(filename, temp_path):
@@ -62,9 +78,9 @@ def process_single(filename, temp_path):
         comparison = compare_fields(extracted, qr_data)
         return {
             'filename': filename,
-            'name':     extracted.get('name',   '—'),
-            'course':   extracted.get('course', '—'),
-            'date':     extracted.get('date',   '—'),
+            'name':     qr_data.get('name') or extracted.get('name') or '—',
+            'course':   qr_data.get('course') or extracted.get('course') or '—',
+            'date':     qr_data.get('date') or extracted.get('date') or '—',
             'flag':     comparison['verdict']
         }
 
