@@ -24,9 +24,8 @@ from concurrent.futures import ThreadPoolExecutor
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="../frontend"), name="static")
 
-# On Render free tier (512 MB RAM), limit parallel OCR workers to avoid OOM
-_workers = 2 if os.getenv('ENVIRONMENT') == 'production' else 8
-executor = ThreadPoolExecutor(max_workers=_workers)
+# Force limit parallel OCR workers to 2 to prevent Out Of Memory (OOM) on Render's 512MB free tier
+executor = ThreadPoolExecutor(max_workers=2)
 
 # ── SMTP config from environment variables ──────────────────
 SMTP_HOST     = os.getenv("SMTP_HOST", "smtp.gmail.com")
