@@ -11,3 +11,4 @@ pyzbar==0.1.9
 numpy==1.24.4
 pdf2image==1.17.0
 requests==2.31.0
+python-dotenv==1.0.1

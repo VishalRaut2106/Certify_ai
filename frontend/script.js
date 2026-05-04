@@ -1,254 +1,315 @@
 const API_SINGLE = '/verify';
 const API_BULK   = '/verify-bulk';
 
-// DOM refs
-const uploadArea   = document.getElementById('upload-area');
-const fileInput    = document.getElementById('file-input');
-const uploadLabel  = document.getElementById('upload-label');
-const uploadSub    = document.getElementById('upload-sub');
-const previewImg   = document.getElementById('preview-img');
-const verifyBtn    = document.getElementById('verify-btn');
-const btnLabel     = document.getElementById('btn-label');
-const loader       = document.getElementById('loader');
-const loaderText   = document.getElementById('loader-text');
-const errorMsg     = document.getElementById('error-msg');
-const resultEl     = document.getElementById('result');
-const verdictBanner = document.getElementById('verdict-banner');
-const verdictIcon  = document.getElementById('verdict-icon');
-const verdictText  = document.getElementById('verdict-text');
-const fieldsEl     = document.getElementById('fields');
-const resultNote   = document.getElementById('result-note');
-const bulkList     = document.getElementById('bulk-list');
-const bulkResult   = document.getElementById('bulk-result');
+// Elements
+const flipper         = document.getElementById('flipper');
+const tabSingle       = document.getElementById('tab-single');
+const tabBulk         = document.getElementById('tab-bulk');
 
-let selectedFiles = [];
-let currentTab = 'single';
+// Single
+const uploadSingle    = document.getElementById('upload-area-single');
+const inputSingle     = document.getElementById('file-input-single');
+const singleLabel     = document.getElementById('single-label');
+const previewImg      = document.getElementById('preview-img');
+const btnSingle       = document.getElementById('verify-btn-single');
+const loaderSingle    = document.getElementById('loader-single');
+const errorSingle     = document.getElementById('error-single');
+const resultSingle    = document.getElementById('result-single');
+const verdictBanner   = document.getElementById('verdict-banner');
+const verdictText     = document.getElementById('verdict-text');
+const verdictDot      = document.getElementById('verdict-dot');
+const fieldsEl        = document.getElementById('fields');
+const resultNote      = document.getElementById('result-note');
 
-function show(el)  { el.classList.add('visible'); }
-function hide(el)  { el.classList.remove('visible'); }
+// Bulk
+const uploadBulk      = document.getElementById('upload-area-bulk');
+const inputBulk       = document.getElementById('file-input-bulk');
+const bulkLabel       = document.getElementById('bulk-label');
+const bulkFileList    = document.getElementById('bulk-file-list');
+const btnBulk         = document.getElementById('verify-btn-bulk');
+const loaderBulk      = document.getElementById('loader-bulk');
+const loaderBulkText  = document.getElementById('loader-bulk-text');
+const errorBulk       = document.getElementById('error-bulk');
+const bulkDone        = document.getElementById('bulk-done');
 
-// ── Tab switching ──────────────────────────────────────────────
+let currentTab  = 'single';
+let singleFile  = null;
+let bulkFiles   = [];
+
+// ── Helpers ───────────────────────────────────
+const show = el => el.classList.add('visible');
+const hide = el => el.classList.remove('visible');
+
+// Keep the flipper height in sync so the card-back's absolute pos works
+function syncHeight() {
+  const active = currentTab === 'single'
+    ? document.querySelector('.card-front')
+    : document.querySelector('.card-back');
+  flipper.style.height = active.offsetHeight + 'px';
+}
+
+// ── Tab switch ────────────────────────────────
 function switchTab(tab) {
+  if (tab === currentTab) return;
   currentTab = tab;
-  document.getElementById('tab-single').classList.toggle('active', tab === 'single');
-  document.getElementById('tab-bulk').classList.toggle('active',   tab === 'bulk');
-  fileInput.multiple = (tab === 'bulk');
-  resetUI();
-  if (tab === 'single') {
-    uploadLabel.textContent = 'Drop your certificate here';
-    uploadSub.innerHTML = 'or <span class="upload-link">click to browse</span> · PNG, JPG, PDF';
-    btnLabel.textContent = 'Verify Certificate';
-  } else {
-    uploadLabel.textContent = 'Drop multiple certificates here';
-    uploadSub.innerHTML = 'or <span class="upload-link">click to browse</span> · PNG, JPG, PDF';
-    btnLabel.textContent = 'Verify All & Download Excel';
-  }
+  tabSingle.classList.toggle('active', tab === 'single');
+  tabBulk.classList.toggle('active', tab === 'bulk');
+  flipper.classList.toggle('flipped', tab === 'bulk');
+  // After transition sync height
+  setTimeout(syncHeight, 520);
 }
 
-// ── Reset ─────────────────────────────────────────────────────
-function resetUI() {
-  selectedFiles = [];
-  fileInput.value = '';
-  uploadArea.classList.remove('has-preview');
-  previewImg.classList.remove('visible');
-  previewImg.src = '';
-  hide(bulkList);
-  hide(loader);
-  hide(errorMsg);
-  hide(resultEl);
-  hide(bulkResult);
-  verifyBtn.disabled = true;
-  fieldsEl.innerHTML = '';
-  bulkList.innerHTML = '';
-  errorMsg.textContent = '';
-  resultNote.textContent = '';
+// Initial height sync
+window.addEventListener('load', syncHeight);
+window.addEventListener('resize', syncHeight);
+
+// ── Single file ───────────────────────────────
+function applySingleFile(file) {
+  singleFile = file;
+  singleLabel.textContent = file.name;
+  hide(resultSingle);
+  hide(errorSingle);
   hide(resultNote);
-}
 
-// ── Apply files ───────────────────────────────────────────────
-function applyFiles(files) {
-  selectedFiles = Array.from(files);
-  bulkList.innerHTML = '';
-
-  if (selectedFiles.length === 1 && selectedFiles[0].type.startsWith('image/')) {
+  if (file.type.startsWith('image/')) {
     const reader = new FileReader();
     reader.onload = e => {
       previewImg.src = e.target.result;
       show(previewImg);
-      uploadArea.classList.add('has-preview');
+      uploadSingle.classList.add('has-preview');
     };
-    reader.readAsDataURL(selectedFiles[0]);
+    reader.readAsDataURL(file);
   } else {
-    uploadArea.classList.remove('has-preview');
     previewImg.classList.remove('visible');
+    uploadSingle.classList.remove('has-preview');
   }
+  btnSingle.disabled = false;
+  syncHeight();
+}
 
-  // File count
-  const count = document.createElement('p');
-  count.className = 'file-count';
-  count.textContent = `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} selected`;
-  bulkList.appendChild(count);
+inputSingle.addEventListener('change', () => {
+  if (inputSingle.files[0]) applySingleFile(inputSingle.files[0]);
+});
 
-  // File items
-  selectedFiles.forEach((file, idx) => {
-    const item = document.createElement('div');
-    item.className = 'file-item';
-    item.innerHTML =
-      '<div class="file-dot"></div>' +
-      `<span class="file-name">${file.name}</span>` +
-      `<span class="file-remove" data-idx="${idx}" title="Remove">✕</span>`;
-    bulkList.appendChild(item);
+// Drag & drop single
+['dragenter','dragover'].forEach(e => {
+  uploadSingle.addEventListener(e, ev => { ev.preventDefault(); uploadSingle.classList.add('drag-over'); });
+});
+['dragleave','drop'].forEach(e => {
+  uploadSingle.addEventListener(e, ev => {
+    ev.preventDefault();
+    uploadSingle.classList.remove('drag-over');
+    if (e === 'drop' && ev.dataTransfer.files[0]) applySingleFile(ev.dataTransfer.files[0]);
+  });
+});
+
+// ── Bulk files ────────────────────────────────
+function applyBulkFiles(files) {
+  bulkFiles = Array.from(files);
+  hide(errorBulk);
+  hide(bulkDone);
+  renderBulkList();
+  if (bulkFiles.length > 0) {
+    show(emailFlow);
+    btnBulk.disabled = false;
+  } else {
+    hide(emailFlow);
+    btnBulk.disabled = true;
+  }
+  syncHeight();
+}
+
+function renderBulkList() {
+  bulkFileList.innerHTML = '';
+  if (bulkFiles.length === 0) { hide(bulkFileList); return; }
+
+  const countEl = document.createElement('p');
+  countEl.className = 'file-list-count';
+  countEl.textContent = `${bulkFiles.length} file${bulkFiles.length !== 1 ? 's' : ''} selected`;
+  bulkFileList.appendChild(countEl);
+
+  bulkFiles.forEach((file, idx) => {
+    const row = document.createElement('div');
+    row.className = 'file-item';
+    row.innerHTML =
+      `<div class="file-dot"></div>` +
+      `<span class="file-name" title="${file.name}">${file.name}</span>` +
+      `<span class="file-remove" data-idx="${idx}">✕</span>`;
+    bulkFileList.appendChild(row);
   });
 
-  bulkList.querySelectorAll('.file-remove').forEach(btn => {
+  bulkFileList.querySelectorAll('.file-remove').forEach(btn => {
     btn.addEventListener('click', () => {
-      const idx = parseInt(btn.dataset.idx);
-      selectedFiles.splice(idx, 1);
-      selectedFiles.length === 0 ? resetUI() : applyFiles(selectedFiles);
+      bulkFiles.splice(+btn.dataset.idx, 1);
+      renderBulkList();
+      btnBulk.disabled = bulkFiles.length === 0;
+      syncHeight();
     });
   });
 
-  show(bulkList);
-  hide(resultEl);
-  hide(bulkResult);
-  hide(errorMsg);
-  verifyBtn.disabled = false;
+  show(bulkFileList);
 }
 
-// ── Error ─────────────────────────────────────────────────────
-function showError(msg) {
-  errorMsg.textContent = msg;
-  show(errorMsg);
-  hide(loader);
-}
+inputBulk.addEventListener('change', () => {
+  if (inputBulk.files.length) applyBulkFiles(inputBulk.files);
+});
 
-// ── Render single result ──────────────────────────────────────
+['dragenter','dragover'].forEach(e => {
+  uploadBulk.addEventListener(e, ev => { ev.preventDefault(); uploadBulk.classList.add('drag-over'); });
+});
+['dragleave','drop'].forEach(e => {
+  uploadBulk.addEventListener(e, ev => {
+    ev.preventDefault();
+    uploadBulk.classList.remove('drag-over');
+    if (e === 'drop' && ev.dataTransfer.files.length) applyBulkFiles(ev.dataTransfer.files);
+  });
+});
+
+// ── Single verify ─────────────────────────────
+btnSingle.addEventListener('click', async () => {
+  if (!singleFile) return;
+  hide(errorSingle); hide(resultSingle);
+  show(loaderSingle);
+  btnSingle.disabled = true;
+  syncHeight();
+
+  try {
+    const fd = new FormData();
+    fd.append('certificate', singleFile);
+    const res  = await fetch(API_SINGLE, { method: 'POST', body: fd });
+    const data = await res.json();
+    renderResult(data);
+  } catch {
+    errorSingle.textContent = 'Connection failed. Is the server running?';
+    show(errorSingle);
+  } finally {
+    hide(loaderSingle);
+    btnSingle.disabled = false;
+    syncHeight();
+  }
+});
+
+// ── Email Flow ───────────────────────────────
+const emailFlow      = document.getElementById('email-flow');
+const emailInput     = document.getElementById('email-input');
+const doneTitle      = document.getElementById('done-title');
+const doneSub        = document.getElementById('done-sub');
+
+// Dynamically update verify button text based on email input
+emailInput.addEventListener('input', () => {
+  if (emailInput.value.trim() !== '') {
+    btnBulk.textContent = 'Verify & Send Email';
+  } else {
+    btnBulk.textContent = 'Verify & Download Excel';
+  }
+});
+
+// ── Bulk verify ───────────────────────────────
+btnBulk.addEventListener('click', async () => {
+  if (!bulkFiles.length) return;
+
+  const emailVal  = emailInput.value.trim();
+  const sendEmail = emailVal !== '';
+
+  hide(errorBulk); hide(bulkDone);
+  loaderBulkText.textContent = `Processing ${bulkFiles.length} file${bulkFiles.length > 1 ? 's' : ''}…`;
+  show(loaderBulk);
+  btnBulk.disabled = true;
+  syncHeight();
+
+  try {
+    const fd = new FormData();
+    bulkFiles.forEach(f => fd.append('certificates', f));
+    if (sendEmail) fd.append('email', emailVal);
+
+    const res = await fetch(API_BULK, { method: 'POST', body: fd });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Server error' }));
+      errorBulk.textContent = err.detail || 'Server error during bulk verification.';
+      show(errorBulk);
+      return;
+    }
+
+    // Check if server emailed the report
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const data = await res.json();
+      if (data.status === 'emailed') {
+        doneTitle.textContent = 'Report sent!';
+        doneSub.textContent   = `Excel report emailed to ${data.to}`;
+        show(bulkDone);
+        return;
+      }
+    }
+
+    // Otherwise trigger download
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'verification_results.xlsx'; a.click();
+    URL.revokeObjectURL(url);
+    doneTitle.textContent = 'Verification complete';
+    doneSub.textContent   = 'Excel report is downloading';
+    show(bulkDone);
+
+  } catch {
+    errorBulk.textContent = 'Connection failed. Is the server running?';
+    show(errorBulk);
+  } finally {
+    hide(loaderBulk);
+    btnBulk.disabled = false;
+    syncHeight();
+  }
+});
+
+// ── Render single result ──────────────────────
 function renderResult(data) {
-  hide(loader);
-  show(resultEl);
-
+  show(resultSingle);
   const verdict = data.verdict || '';
   const isVerified = verdict === 'Verified';
   const isManual   = verdict.startsWith('Manual');
-  const isFraud    = !isVerified && !isManual;
 
-  verdictBanner.className = 'verdict-banner ' + (isVerified ? 'verified' : isManual ? 'manual' : 'fraud');
-  verdictIcon.textContent = isVerified ? '✅' : isManual ? '⚠️' : '❌';
+  verdictBanner.className = 'verdict-row ' + (isVerified ? 'verified' : isManual ? 'manual' : 'fraud');
 
   if (isVerified) {
     verdictText.textContent = 'Certificate is Authentic';
   } else if (isManual) {
     verdictText.textContent = verdict.replace('Manual Review - ', '');
   } else {
-    verdictText.textContent = 'Certificate appears Fraudulent';
+    verdictText.textContent = 'Possible Fraud Detected';
   }
 
-  // Fields
   fieldsEl.innerHTML = '';
   [
     { key: 'name',   label: 'Name'   },
     { key: 'course', label: 'Course' },
     { key: 'date',   label: 'Date'   },
   ].forEach(({ key, label }) => {
-    const info = data[key];
-    if (!info) return;
+    const info = data[key]; if (!info) return;
     const row = document.createElement('div');
-    row.className = 'field-row';
-    const ocr  = info.ocr  || '—';
-    const qr   = info.qr   || '—';
-    const ok   = info.match;
+    row.className = 'match-row';
     row.innerHTML =
-      `<span class="field-label">${label}</span>` +
-      `<span class="field-ocr" title="${ocr}">${ocr}</span>` +
-      `<span class="field-qr"  title="${qr}">${qr}</span>` +
-      `<span class="match-icon ${ok ? 'ok' : 'fail'}">${ok ? '✓' : '✗'}</span>`;
+      `<span class="match-field">${label}</span>` +
+      `<span class="match-ocr" title="${info.ocr||''}">${info.ocr||'—'}</span>` +
+      `<span class="match-qr"  title="${info.qr||''}">${info.qr||'—'}</span>` +
+      `<span class="${info.match ? 'match-ok' : 'match-fail'}">${info.match ? '✓' : '✗'}</span>`;
     fieldsEl.appendChild(row);
   });
 
-  // Contextual note
-  resultNote.textContent = '';
+  // Note
   if (isVerified) {
-    resultNote.textContent = 'All fields — name, course, and date — matched between the certificate text and its embedded QR code.';
+    resultNote.textContent = 'All fields matched between the printed certificate and QR code.';
     show(resultNote);
-  } else if (verdict.includes('QR Unreadable')) {
-    resultNote.textContent = 'The QR code on this certificate could not be scanned. This may be due to image quality. Please verify manually.';
+  } else if (verdict.includes('QR')) {
+    resultNote.textContent = 'QR code could not be scanned. Please verify manually or use a higher quality scan.';
     show(resultNote);
-  } else if (isFraud) {
-    resultNote.textContent = 'One or more fields did not match the QR code data. The certificate may have been altered.';
+  } else if (!isVerified && !isManual) {
+    resultNote.textContent = 'One or more fields did not match the QR code. This certificate may have been tampered with.';
     show(resultNote);
-  }
-}
-
-// ── File input ────────────────────────────────────────────────
-fileInput.addEventListener('change', () => {
-  if (fileInput.files && fileInput.files.length > 0) applyFiles(fileInput.files);
-});
-
-// ── Drag & drop ───────────────────────────────────────────────
-uploadArea.addEventListener('dragenter', e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
-uploadArea.addEventListener('dragover',  e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
-uploadArea.addEventListener('dragleave', e => { if (!uploadArea.contains(e.relatedTarget)) uploadArea.classList.remove('drag-over'); });
-uploadArea.addEventListener('drop', e => {
-  e.preventDefault();
-  uploadArea.classList.remove('drag-over');
-  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) applyFiles(e.dataTransfer.files);
-});
-
-// ── Verify click ──────────────────────────────────────────────
-verifyBtn.addEventListener('click', async () => {
-  if (!selectedFiles.length) return;
-
-  hide(errorMsg);
-  hide(resultEl);
-  hide(bulkResult);
-  show(loader);
-  verifyBtn.disabled = true;
-
-  const formData = new FormData();
-
-  if (currentTab === 'single' || selectedFiles.length === 1) {
-    loaderText.textContent = 'Reading certificate…';
-    formData.append('certificate', selectedFiles[0]);
-
-    try {
-      const res = await fetch(API_SINGLE, { method: 'POST', body: formData });
-      const data = await res.json();
-      renderResult(data);
-    } catch {
-      showError('Could not connect to the server. Make sure the app is running.');
-    } finally {
-      verifyBtn.disabled = false;
-      hide(loader);
-    }
-
   } else {
-    loaderText.textContent = `Processing ${selectedFiles.length} certificates…`;
-    selectedFiles.forEach(f => formData.append('certificates', f));
-
-    try {
-      const res = await fetch(API_BULK, { method: 'POST', body: formData });
-      if (!res.ok) { showError('Server error during bulk verification.'); return; }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'verification_results.xlsx'; a.click();
-      URL.revokeObjectURL(url);
-      hide(loader);
-      show(bulkResult);
-    } catch {
-      showError('Could not connect to the server.');
-    } finally {
-      verifyBtn.disabled = false;
-      hide(loader);
-    }
+    hide(resultNote);
   }
-});
 
-// ── Keyboard ──────────────────────────────────────────────────
-uploadArea.setAttribute('tabindex', '0');
-uploadArea.addEventListener('keydown', e => {
-  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
-});
-
-// Init
-switchTab('single');
+  syncHeight();
+}

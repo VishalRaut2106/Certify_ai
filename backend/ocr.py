@@ -1,5 +1,5 @@
 import pytesseract
-from PIL import Image
+from PIL import Image, ImageEnhance, ImageFilter
 from pdf2image import convert_from_path
 import re
 import os
@@ -15,65 +15,48 @@ else:
     pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
     POPPLER_PATH = None  # pdf2image auto-detects on Linux
 
-# date_pattern = re.compile(r'(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+\d{4}')
-# date_pattern = re.compile(r'(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s*\d{4}')
+# Faster Tesseract config: PSM 3 = fully automatic, OEM 1 = LSTM only (faster)
+TESS_CONFIG = '--oem 1 --psm 3'
 
-# def extract_text(image_path):
-#     if image_path.lower().endswith('.pdf'):
-#         pages = convert_from_path(image_path, dpi=200, poppler_path=POPPLER_PATH)
-#         image = pages[0]
-#     else:
-#         image = Image.open(image_path)
+# Max dimension for images before OCR (larger = slower, no accuracy gain beyond this)
+MAX_OCR_DIM = 2000
 
-#     raw_text = pytesseract.image_to_string(image, lang='eng')
+date_pattern = re.compile(
+    r'(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s*\d{4}'
+)
 
-#     # DEBUG - remove later
-#     print("=== RAW OCR TEXT ===")
-#     print(raw_text)
-#     print("===================")
+def _prepare_image(image: Image.Image) -> Image.Image:
+    """Resize oversized images and convert to greyscale for faster OCR."""
+    # Convert to RGB if needed
+    if image.mode not in ('RGB', 'L'):
+        image = image.convert('RGB')
 
-#     lines = [line.strip() for line in raw_text.split('\n') if line.strip()]
+    # Resize if too large — no accuracy gain past ~2000px wide
+    w, h = image.size
+    if max(w, h) > MAX_OCR_DIM:
+        scale = MAX_OCR_DIM / max(w, h)
+        image = image.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
 
-#     extracted = {'name': None, 'course': None, 'date': None}
-
-#     for i, line in enumerate(lines):
-#         lower = line.lower()
-
-#         if 'awarded to' in lower or 'certificate is awarded to' in lower:
-#             if i + 1 < len(lines):
-#                 extracted['name'] = lines[i + 1]
-
-#         if 'completing the course' in lower:
-#             if i + 1 < len(lines):
-#                 extracted['course'] = lines[i + 1]
-
-#         # if date_pattern.search(line):
-#         #     extracted['date'] = line
-#         if date_pattern.search(line):
-#             match = date_pattern.search(line)
-#             extracted['date'] = match.group(0)  # extracts only the date part
-
-#         for i, line in enumerate(lines):
-#             lower = line.lower()
-#             print(f"Line {i}: {line}")  # DEBUG
-
-#     return extracted
-
-
-date_pattern = re.compile(r'(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s*\d{4}')
+    # Greyscale + slight sharpening helps Tesseract
+    image = image.convert('L')
+    image = ImageEnhance.Contrast(image).enhance(1.4)
+    image = image.filter(ImageFilter.SHARPEN)
+    return image
 
 def extract_text(image_path):
     image = None
     raw_text = ""
     try:
         if image_path.lower().endswith('.pdf'):
-            pages = convert_from_path(image_path, dpi=200, poppler_path=POPPLER_PATH)
+            # DPI 150 is sufficient for most certs and ~40% faster than 200
+            pages = convert_from_path(image_path, dpi=150, poppler_path=POPPLER_PATH)
             image = pages[0]
         else:
             image = Image.open(image_path)
             image.load()
 
-        raw_text = pytesseract.image_to_string(image, lang='eng')
+        image = _prepare_image(image)
+        raw_text = pytesseract.image_to_string(image, lang='eng', config=TESS_CONFIG)
     except Exception as e:
         print(f"OCR Error on {image_path}: {e}")
     finally:

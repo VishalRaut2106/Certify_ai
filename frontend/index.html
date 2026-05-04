@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CertifyAI – Certificate Verification</title>
-  <meta name="description" content="Instantly verify the authenticity of Infosys Springboard certificates using AI-powered OCR and QR analysis." />
+  <meta name="description" content="Verify Infosys Springboard certificates instantly." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -12,147 +12,161 @@
 </head>
 <body>
 
-  <!-- Top Nav -->
+  <!-- Nav -->
   <header class="nav">
     <div class="nav-inner">
       <div class="nav-logo">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-          <rect width="28" height="28" rx="7" fill="#2563eb"/>
-          <path d="M8 14.5l4 4 8-9" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <div class="logo-mark">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2.5 7l3 3 6-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
         <span>CertifyAI</span>
       </div>
-      <span class="nav-badge">Infosys Springboard</span>
+      <span class="nav-tag">Infosys Springboard</span>
     </div>
   </header>
 
-  <main class="main">
+  <!-- Page -->
+  <div class="page">
 
-    <!-- Hero -->
-    <section class="hero">
-      <h1>Certificate Verification</h1>
-      <p>Upload a certificate to instantly check if it's genuine. Works with both images and PDFs.</p>
-    </section>
+    <!-- Left: info -->
+    <div class="page-left">
+      <p class="left-label">Certificate Verification</p>
+      <h1>Verify in<br/>seconds.</h1>
+      <p class="left-desc">Upload a certificate and our system cross-checks the printed text against the embedded QR code to confirm authenticity.</p>
 
-    <!-- Tabs -->
-    <div class="tabs">
-      <button class="tab active" id="tab-single" onclick="switchTab('single')">Single Certificate</button>
-      <button class="tab" id="tab-bulk" onclick="switchTab('bulk')">Bulk Verify</button>
+      <div class="info-blocks">
+        <div class="info-block">
+          <span class="info-num">01</span>
+          <span class="info-text">Upload certificate</span>
+        </div>
+        <div class="info-block">
+          <span class="info-num">02</span>
+          <span class="info-text">AI reads text & QR</span>
+        </div>
+        <div class="info-block">
+          <span class="info-num">03</span>
+          <span class="info-text">Instant verdict</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Card -->
-    <div class="card">
+    <!-- Right: card -->
+    <div class="page-right">
 
-      <!-- Upload Zone -->
-      <div class="upload-zone" id="upload-area">
-        <input type="file" id="file-input" accept="image/*,.pdf" multiple />
-        <div class="upload-inner">
-          <div class="upload-icon-wrap">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <path d="M16 4v16M9 11l7-7 7 7" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M4 24h24" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
-            </svg>
+      <!-- Mode toggle -->
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="tab-single" onclick="switchTab('single')">Single</button>
+        <button class="mode-btn" id="tab-bulk" onclick="switchTab('bulk')">Bulk</button>
+      </div>
+
+      <!-- Card flip scene -->
+      <div class="scene" id="card-scene">
+        <div class="flipper" id="flipper">
+
+          <!-- FRONT: Single -->
+          <div class="card card-front">
+            <div class="drop-zone" id="upload-area-single">
+              <input type="file" id="file-input-single" accept="image/*,.pdf" />
+              <div class="drop-inner">
+                <div class="drop-icon">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 3v10M6 7l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M3 16h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <p class="drop-title" id="single-label">Drop certificate here</p>
+                <p class="drop-hint">PNG, JPG or PDF · <span class="drop-link">Browse</span></p>
+              </div>
+              <img id="preview-img" src="" alt="" />
+            </div>
+
+            <button class="btn-verify" id="verify-btn-single" disabled>Verify Certificate</button>
+
+            <!-- Loader -->
+            <div class="loader" id="loader-single">
+              <div class="loader-track"><div class="loader-bar"></div></div>
+              <span>Analyzing…</span>
+            </div>
+
+            <!-- Error -->
+            <div class="msg-error" id="error-single"></div>
+
+            <!-- Result -->
+            <div class="result-box" id="result-single">
+              <div class="result-sep"></div>
+              <div class="verdict-row" id="verdict-banner">
+                <div class="verdict-dot" id="verdict-dot"></div>
+                <div>
+                  <p class="verdict-label">Result</p>
+                  <p class="verdict-value" id="verdict-text"></p>
+                </div>
+              </div>
+              <div class="match-grid">
+                <div class="match-head">
+                  <span>Field</span><span>Certificate</span><span>QR Code</span><span>✓</span>
+                </div>
+                <div id="fields"></div>
+              </div>
+              <p class="result-note" id="result-note"></p>
+            </div>
           </div>
-          <p class="upload-title" id="upload-label">Drop your certificate here</p>
-          <p class="upload-hint" id="upload-sub">or <span class="upload-link">click to browse</span> · PNG, JPG, PDF</p>
-        </div>
-        <img id="preview-img" src="" alt="preview" />
-      </div>
 
-      <!-- File list -->
-      <div class="file-list" id="bulk-list"></div>
+          <!-- BACK: Bulk -->
+          <div class="card card-back">
+            <div class="drop-zone" id="upload-area-bulk">
+              <input type="file" id="file-input-bulk" accept="image/*,.pdf" multiple />
+              <div class="drop-inner">
+                <div class="drop-icon">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 3v10M6 7l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M3 16h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <p class="drop-title" id="bulk-label">Drop multiple certificates</p>
+                <p class="drop-hint">PNG, JPG or PDF · <span class="drop-link">Browse</span></p>
+              </div>
+            </div>
 
-      <!-- Action Button -->
-      <button class="btn-verify" id="verify-btn" disabled>
-        <span id="btn-label">Verify Certificate</span>
-      </button>
+            <div class="file-list" id="bulk-file-list"></div>
 
-      <!-- Loader -->
-      <div class="loader" id="loader">
-        <div class="loader-dots">
-          <span></span><span></span><span></span>
-        </div>
-        <p id="loader-text">Analyzing certificate…</p>
-      </div>
+            <div class="email-flow" id="email-flow">
+              <p class="email-flow-label">Send report via email (Optional)</p>
+              <input type="email" id="email-input" class="email-input" placeholder="name@college.edu" autocomplete="email" />
+            </div>
 
-      <!-- Error -->
-      <div class="msg-error" id="error-msg"></div>
+            <button class="btn-verify" id="verify-btn-bulk" disabled>Verify &amp; Download Excel</button>
 
-      <!-- ── Single Result ── -->
-      <div class="result" id="result">
-        <div class="result-divider"></div>
+            <!-- Loader -->
+            <div class="loader" id="loader-bulk">
+              <div class="loader-track"><div class="loader-bar"></div></div>
+              <span id="loader-bulk-text">Processing…</span>
+            </div>
 
-        <!-- Verdict Banner -->
-        <div class="verdict-banner" id="verdict-banner">
-          <div class="verdict-icon" id="verdict-icon"></div>
-          <div>
-            <p class="verdict-label">Verification Result</p>
-            <p class="verdict-text" id="verdict-text"></p>
+            <!-- Error -->
+            <div class="msg-error" id="error-bulk"></div>
+
+            <!-- Done -->
+            <div class="bulk-done" id="bulk-done">
+              <div class="result-sep"></div>
+              <div class="done-row" id="done-row-inner">
+                <div class="done-icon">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div>
+                  <p class="done-title" id="done-title">Verification complete</p>
+                  <p class="done-sub" id="done-sub">Excel report is downloading</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <!-- Fields Table -->
-        <div class="fields-table">
-          <div class="fields-head">
-            <span>Field</span>
-            <span>On Certificate</span>
-            <span>In QR Code</span>
-            <span>Match</span>
-          </div>
-          <div id="fields"></div>
-        </div>
-
-        <!-- What this means -->
-        <div class="result-note" id="result-note"></div>
-      </div>
-
-      <!-- Bulk Result -->
-      <div class="bulk-result" id="bulk-result">
-        <div class="result-divider"></div>
-        <div class="bulk-success">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <circle cx="10" cy="10" r="10" fill="#dcfce7"/>
-            <path d="M6 10.5l3 3 5-6" stroke="#16a34a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Verification complete — your Excel report is downloading
-        </div>
-      </div>
+        </div><!-- /flipper -->
+      </div><!-- /scene -->
 
     </div>
-
-    <!-- How it works -->
-    <section class="how-it-works">
-      <h2>How it works</h2>
-      <div class="steps">
-        <div class="step">
-          <div class="step-num">1</div>
-          <div>
-            <strong>Upload</strong>
-            <p>Upload the certificate image or PDF file you want to verify.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-num">2</div>
-          <div>
-            <strong>AI Analysis</strong>
-            <p>Our system reads the certificate text via OCR and decodes the QR code.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-num">3</div>
-          <div>
-            <strong>Result</strong>
-            <p>Name, course, and date are cross-checked. You get an instant verdict.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <footer class="footer">
-    <p>CertifyAI · Built for Infosys Springboard certificate verification</p>
-  </footer>
+  </div>
 
   <script src="/static/script.js"></script>
 </body>
