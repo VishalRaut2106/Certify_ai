@@ -169,6 +169,13 @@ jobs:
           pip install pywebview==5.0.5 pyinstaller==6.6.0 --quiet
         shell: powershell
 
+      - name: Download Poppler
+        run: |
+          cd backend
+          Invoke-WebRequest -Uri "https://github.com/oschwartz10612/poppler-windows/releases/download/v24.08.0-0/Release-24.08.0-0.zip" -OutFile "poppler.zip"
+          Expand-Archive -Path "poppler.zip" -DestinationPath "poppler" -Force
+        shell: powershell
+
       - name: Build with PyInstaller
         run: |
           cd backend
