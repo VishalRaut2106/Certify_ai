@@ -1,2 +1,2 @@
 cd backend
-uvicorn app:app --reload --port 500
+uvicorn app:app --reload --port 5000

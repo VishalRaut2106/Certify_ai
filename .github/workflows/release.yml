@@ -1,0 +1,121 @@
+name: 🚀 Create Release
+
+on:
+  # ── Trigger 1: Manual — type version + notes in GitHub UI ──
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. v1.1-web, v2.0-desktop)'
+        required: true
+        type: string
+      release_notes:
+        description: 'What changed in this release?'
+        required: false
+        type: string
+        default: 'See commit history for details.'
+      prerelease:
+        description: 'Mark as pre-release (beta)?'
+        required: false
+        type: boolean
+        default: false
+
+  # ── Trigger 2: Auto — push a tag like "v2.0-desktop" ──
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Build & Publish Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to create releases and push tags
+
+    steps:
+      # 1. Checkout full history (needed for changelog generation)
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Resolve the version string from either source
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Resolved version: $VERSION"
+
+      # 3. If manually triggered, create + push the git tag
+      - name: Create and push tag (manual trigger only)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Create tag if it doesn't already exist
+          git tag ${{ steps.version.outputs.version }} 2>/dev/null && \
+            git push origin ${{ steps.version.outputs.version }} || \
+            echo "Tag already exists, skipping."
+
+      # 4. Auto-generate a changelog from commits since the previous tag
+      - name: Generate changelog
+        id: changelog
+        run: |
+          CURRENT_TAG="${{ steps.version.outputs.version }}"
+          # Find the previous tag (exclude the current one)
+          PREV_TAG=$(git tag --sort=-creatordate | grep -v "^${CURRENT_TAG}$" | head -1)
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous tag found — listing recent commits."
+            COMMITS=$(git log --oneline --no-merges | head -20)
+          else
+            echo "Comparing $PREV_TAG → $CURRENT_TAG"
+            COMMITS=$(git log ${PREV_TAG}..HEAD --oneline --no-merges)
+          fi
+          # Write multi-line output safely
+          {
+            echo "commits<<EOF"
+            echo "$COMMITS"
+            echo "EOF"
+            echo "prev_tag=$PREV_TAG"
+          } >> $GITHUB_OUTPUT
+
+      # 5. Publish the GitHub Release
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: "CertifyAI ${{ steps.version.outputs.version }}"
+          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
+          draft: false
+          body: |
+            ## 🎓 CertifyAI ${{ steps.version.outputs.version }}
+
+            ${{ github.event.inputs.release_notes || 'Automated release from tag push.' }}
+
+            ---
+
+            ### 📋 Changes since ${{ steps.changelog.outputs.prev_tag || 'the beginning' }}
+            ```
+            ${{ steps.changelog.outputs.commits }}
+            ```
+
+            ---
+
+            ### 🚀 How to Run (Web App)
+            ```bash
+            cd backend
+            pip install -r requirements.txt
+            uvicorn app:app --reload --port 5000
+            ```
+            Then open **http://localhost:5000** in your browser.
+
+            ---
+
+            ### 🛠️ Tech Stack
+            - **Backend:** FastAPI + Tesseract OCR + pyzbar QR decoder
+            - **Frontend:** Vanilla HTML / CSS / JS
+            - **Processing:** Parallel bulk verification with fuzzy field matching
