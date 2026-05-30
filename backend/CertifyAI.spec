@@ -11,6 +11,7 @@ Run from backend/ directory:
 """
 
 import os
+from PyInstaller.utils.hooks import collect_submodules
 
 HERE         = os.path.abspath(SPECPATH)
 FRONTEND_DIR = os.path.join(HERE, '..', 'frontend')
@@ -69,7 +70,8 @@ hidden_imports = [
     'requests',
     'dotenv',
     'h11',
-]
+    'email.message',
+] + collect_submodules('pkg_resources') + collect_submodules('packaging')
 
 a = Analysis(
     ['desktop.py'],
