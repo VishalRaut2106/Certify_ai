@@ -111,7 +111,6 @@ a = Analysis(
         'matplotlib',
         'unittest',
         'xmlrpc',
-        'email',
         'html',
         'http.server',
         'ftplib',
