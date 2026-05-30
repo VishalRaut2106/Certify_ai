@@ -17,7 +17,14 @@ import io
 from concurrent.futures import ThreadPoolExecutor
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="../frontend"), name="static")
+
+# ── Resolve frontend path (dev vs frozen .exe) ─────────────────────────────
+if getattr(sys, 'frozen', False):
+    FRONTEND_DIR = os.path.join(sys._MEIPASS, 'frontend')
+else:
+    FRONTEND_DIR = os.path.join(os.path.dirname(__file__), '..', 'frontend')
+
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 # Optimize for HF Spaces 2 vCPUs: limit Tesseract threads and run 4 parallel workers
 os.environ["OMP_THREAD_LIMIT"] = "1"
@@ -28,7 +35,7 @@ executor = ThreadPoolExecutor(max_workers=4)
 
 @app.get("/")
 def index():
-    return FileResponse("../frontend/index.html")
+    return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
 
 
 @app.post("/verify")

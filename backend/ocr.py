@@ -5,8 +5,14 @@ import re
 import os
 import sys
 
-# --- Auto-detect paths based on OS ---
-if sys.platform == 'win32':
+# --- Resolve paths: dev, frozen .exe, or Linux/Docker ---
+if getattr(sys, 'frozen', False):
+    # PyInstaller bundle — binaries extracted to sys._MEIPASS
+    _BASE = sys._MEIPASS
+    pytesseract.pytesseract.tesseract_cmd = os.path.join(_BASE, 'tesseract', 'tesseract.exe')
+    os.environ['TESSDATA_PREFIX'] = os.path.join(_BASE, 'tesseract', 'tessdata')
+    POPPLER_PATH = os.path.join(_BASE, 'poppler', 'bin')
+elif sys.platform == 'win32':
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
     os.environ['TESSDATA_PREFIX'] = r'C:\Program Files\Tesseract-OCR\tessdata'
     POPPLER_PATH = os.path.join(os.path.dirname(__file__), 'poppler', 'poppler-24.08.0', 'Library', 'bin')

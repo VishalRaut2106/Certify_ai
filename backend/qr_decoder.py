@@ -6,7 +6,9 @@ import json
 import os
 import sys
 
-if sys.platform == 'win32':
+if getattr(sys, 'frozen', False):
+    POPPLER_PATH = os.path.join(sys._MEIPASS, 'poppler', 'bin')
+elif sys.platform == 'win32':
     POPPLER_PATH = os.path.join(os.path.dirname(__file__), 'poppler', 'poppler-24.08.0', 'Library', 'bin')
 else:
     POPPLER_PATH = None  # auto-detected on Linux

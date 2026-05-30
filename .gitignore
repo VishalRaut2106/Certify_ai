@@ -42,3 +42,8 @@ Thumbs.db
 .vscode/
 .idea/
 backend/poppler/
+
+# PyInstaller build artifacts
+backend/build/
+backend/dist/
+*.spec.bak

@@ -1,4 +1,4 @@
-name:  Create Release
+name: 🚀 Create Release
 
 on:
   # ── Trigger 1: Manual — type version + notes in GitHub UI ──
@@ -18,6 +18,11 @@ on:
         required: false
         type: boolean
         default: false
+      build_desktop:
+        description: 'Build and attach Windows .exe?'
+        required: false
+        type: boolean
+        default: false
 
   # ── Trigger 2: Auto — push a tag like "v2.0-desktop" ──
   push:
@@ -25,20 +30,24 @@ on:
       - 'v*'
 
 jobs:
-  release:
-    name: Build & Publish Release
+  # ════════════════════════════════════════════════════════════
+  # JOB 1: Create the GitHub Release
+  # ════════════════════════════════════════════════════════════
+  create-release:
+    name: 📋 Create GitHub Release
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # needed to create releases and push tags
+      contents: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      upload_url: ${{ steps.release.outputs.upload_url }}
 
     steps:
-      # 1. Checkout full history (needed for changelog generation)
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 2. Resolve the version string from either source
       - name: Resolve version
         id: version
         run: |
@@ -50,32 +59,25 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Resolved version: $VERSION"
 
-      # 3. If manually triggered, create + push the git tag
       - name: Create and push tag (manual trigger only)
         if: github.event_name == 'workflow_dispatch'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Create tag if it doesn't already exist
           git tag ${{ steps.version.outputs.version }} 2>/dev/null && \
             git push origin ${{ steps.version.outputs.version }} || \
             echo "Tag already exists, skipping."
 
-      # 4. Auto-generate a changelog from commits since the previous tag
       - name: Generate changelog
         id: changelog
         run: |
           CURRENT_TAG="${{ steps.version.outputs.version }}"
-          # Find the previous tag (exclude the current one)
           PREV_TAG=$(git tag --sort=-creatordate | grep -v "^${CURRENT_TAG}$" | head -1)
           if [ -z "$PREV_TAG" ]; then
-            echo "No previous tag found — listing recent commits."
             COMMITS=$(git log --oneline --no-merges | head -20)
           else
-            echo "Comparing $PREV_TAG → $CURRENT_TAG"
             COMMITS=$(git log ${PREV_TAG}..HEAD --oneline --no-merges)
           fi
-          # Write multi-line output safely
           {
             echo "commits<<EOF"
             echo "$COMMITS"
@@ -83,8 +85,8 @@ jobs:
             echo "prev_tag=$PREV_TAG"
           } >> $GITHUB_OUTPUT
 
-      # 5. Publish the GitHub Release
       - name: Publish GitHub Release
+        id: release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.version }}
@@ -105,17 +107,82 @@ jobs:
 
             ---
 
-            ### 🚀 How to Run (Web App)
+            ### 🚀 Run the Web App
             ```bash
             cd backend
             pip install -r requirements.txt
             uvicorn app:app --reload --port 5000
             ```
-            Then open **http://localhost:5000** in your browser.
+            Open **http://localhost:5000**
+
+            ---
+
+            ### 🖥️ Run the Desktop App (Windows)
+            1. Download `CertifyAI-windows.zip` from the assets below (if available)
+            2. Extract and run `CertifyAI.exe`
+            > **Note:** Tesseract OCR must be installed separately on the target machine.
+            > Download: https://github.com/UB-Mannheim/tesseract/wiki
 
             ---
 
             ### 🛠️ Tech Stack
             - **Backend:** FastAPI + Tesseract OCR + pyzbar QR decoder
             - **Frontend:** Vanilla HTML / CSS / JS
-            - **Processing:** Parallel bulk verification with fuzzy field matching
+            - **Desktop:** pywebview wrapper
+
+  # ════════════════════════════════════════════════════════════
+  # JOB 2: Build Windows Desktop .exe
+  # Runs only when:
+  #   a) Tag contains "-desktop"  (e.g. v2.0-desktop)
+  #   b) Manual trigger with build_desktop = true
+  # ════════════════════════════════════════════════════════════
+  build-desktop:
+    name: 🖥️ Build Windows .exe
+    needs: create-release
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    if: |
+      contains(github.ref, '-desktop') ||
+      github.event.inputs.build_desktop == 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Tesseract OCR
+        run: |
+          choco install tesseract --yes --no-progress
+          echo "C:\Program Files\Tesseract-OCR" >> $env:GITHUB_PATH
+        shell: powershell
+
+      - name: Install Python dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt --quiet
+          pip install pywebview==5.0.5 pyinstaller==6.6.0 --quiet
+        shell: powershell
+
+      - name: Build with PyInstaller
+        run: |
+          cd backend
+          pyinstaller CertifyAI.spec --noconfirm
+        shell: powershell
+
+      - name: Zip the output
+        run: |
+          cd backend
+          Compress-Archive -Path dist\CertifyAI -DestinationPath CertifyAI-windows.zip
+        shell: powershell
+
+      - name: Upload .exe to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.create-release.outputs.version }}
+          files: backend/CertifyAI-windows.zip
