@@ -30,6 +30,7 @@ def compare_fields(ocr_data, qr_data):
         'name':    {'ocr': ocr_data.get('name'),   'qr': qr_data.get('name'),   'match': False},
         'course':  {'ocr': ocr_data.get('course'), 'qr': qr_data.get('course'), 'match': False},
         'date':    {'ocr': ocr_data.get('date'),   'qr': qr_data.get('date'),   'match': False},
+        'issued_by': {'ocr': ocr_data.get('issued_by'), 'qr': qr_data.get('issued_by'), 'match': False},
         'verdict': None
     }
 

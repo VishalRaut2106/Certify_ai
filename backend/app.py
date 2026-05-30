@@ -24,8 +24,9 @@ from concurrent.futures import ThreadPoolExecutor
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="../frontend"), name="static")
 
-# Force limit parallel OCR workers to 2 to prevent Out Of Memory (OOM) on Render's 512MB free tier
-executor = ThreadPoolExecutor(max_workers=2)
+# Optimize for HF Spaces 2 vCPUs: limit Tesseract threads and run 4 parallel workers
+os.environ["OMP_THREAD_LIMIT"] = "1"
+executor = ThreadPoolExecutor(max_workers=4)
 
 # ── SMTP config from environment variables ──────────────────
 SMTP_HOST     = os.getenv("SMTP_HOST", "smtp.gmail.com")
@@ -67,10 +68,17 @@ CertifyAI · Infosys Springboard Certificate Verification
     part.add_header("Content-Disposition", 'attachment; filename="verification_results.xlsx"')
     msg.attach(part)
 
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-        server.starttls()
-        server.login(SMTP_EMAIL, SMTP_PASSWORD)
-        server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
+    # Hugging Face Spaces often blocks outbound SMTP ports.
+    # Add a 5-second timeout so the app doesn't hang if the port is blocked.
+    if SMTP_PORT == 465:
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT) as server:
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
+            server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
+    else:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
+            server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
 
 
 @app.get("/")
@@ -123,28 +131,33 @@ def process_single(filename, temp_path):
 
         if not qr_data:
             return {
-                'filename': filename,
-                'name':     extracted.get('name',   '—'),
-                'course':   extracted.get('course', '—'),
-                'date':     extracted.get('date',   '—'),
-                'flag':     'Manual Review - QR Unreadable'
+                'filename':  filename,
+                'name':      extracted.get('name',   '—'),
+                'issued_by': 'Unknown',
+                'course':    extracted.get('course', '—'),
+                'date':      extracted.get('date',   '—'),
+                'flag':      'Manual Review - QR Unreadable'
             }
 
         comparison = compare_fields(extracted, qr_data)
         return {
-            'filename': filename,
-            'name':     qr_data.get('name') or extracted.get('name') or '—',
-            'course':   qr_data.get('course') or extracted.get('course') or '—',
-            'date':     qr_data.get('date') or extracted.get('date') or '—',
-            'flag':     comparison['verdict']
+            'filename':  filename,
+            'name':      extracted.get('name') or '—',  # Name from certificate (OCR) - could be edited
+            'issued_by': qr_data.get('name') or 'Unknown',  # Original person's name from QR (issuedTo)
+            'course':    qr_data.get('course') or extracted.get('course') or '—',
+            'date':      qr_data.get('date') or extracted.get('date') or '—',
+            'flag':      comparison['verdict']
         }
 
     except Exception as e:
         print(f'Error processing {filename}: {e}')
         return {
-            'filename': filename,
-            'name': '—', 'course': '—', 'date': '—',
-            'flag': 'Manual Review - Processing Error'
+            'filename':  filename,
+            'name':      '—',
+            'issued_by': 'Unknown',
+            'course':    '—',
+            'date':      '—',
+            'flag':      'Manual Review - Processing Error'
         }
     finally:
         try:
@@ -163,7 +176,7 @@ def build_excel(results) -> bytes:
     header_font = Font(bold=True, color="FFFFFF")
     header_fill = PatternFill(start_color="1a1a1a", end_color="1a1a1a", fill_type="solid")
 
-    headers = ["File Name", "Name", "Course", "Date", "Result"]
+    headers = ["File Name", "Name on Certificate", "Issued By", "Course", "Date", "Result"]
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col, value=header)
         cell.font  = header_font
@@ -177,22 +190,24 @@ def build_excel(results) -> bytes:
     for row, result in enumerate(results, 2):
         ws.cell(row=row, column=1, value=result['filename'])
         ws.cell(row=row, column=2, value=result['name'])
-        ws.cell(row=row, column=3, value=result['course'])
-        ws.cell(row=row, column=4, value=result['date'])
-        ws.cell(row=row, column=5, value=result['flag'])
+        ws.cell(row=row, column=3, value=result['issued_by'])
+        ws.cell(row=row, column=4, value=result['course'])
+        ws.cell(row=row, column=5, value=result['date'])
+        ws.cell(row=row, column=6, value=result['flag'])
 
         flag = result['flag']
         fill = green_fill if flag == 'Verified' else (orange_fill if 'Manual' in flag else red_fill)
 
-        for col in range(1, 6):
+        for col in range(1, 7):
             ws.cell(row=row, column=col).fill      = fill
             ws.cell(row=row, column=col).alignment = Alignment(horizontal="center")
 
     ws.column_dimensions['A'].width = 28
     ws.column_dimensions['B'].width = 22
-    ws.column_dimensions['C'].width = 45
-    ws.column_dimensions['D'].width = 18
-    ws.column_dimensions['E'].width = 25
+    ws.column_dimensions['C'].width = 25
+    ws.column_dimensions['D'].width = 45
+    ws.column_dimensions['E'].width = 18
+    ws.column_dimensions['F'].width = 25
 
     stream = io.BytesIO()
     wb.save(stream)

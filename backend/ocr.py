@@ -68,7 +68,7 @@ def extract_text(image_path):
 
     lines = [line.strip() for line in raw_text.split('\n') if line.strip()]
 
-    extracted = {'name': None, 'course': None, 'date': None, 'raw_text': raw_text}
+    extracted = {'name': None, 'course': None, 'date': None, 'issued_by': None, 'raw_text': raw_text}
 
     for i, line in enumerate(lines):
         lower = line.lower()
@@ -89,5 +89,10 @@ def extract_text(image_path):
         elif date_pattern.search(line):
             match = date_pattern.search(line)
             extracted['date'] = match.group(0)
+
+        # Look for Issued By
+        if 'issued by' in lower or 'issuer' in lower:
+            if i + 1 < len(lines):
+                extracted['issued_by'] = lines[i + 1]
 
     return extracted

@@ -45,7 +45,8 @@ def decode_qr(image_path):
         extracted = {
             'name': credential.get('issuedTo', None),
             'course': credential.get('course', None),
-            'date': credential.get('completedOn', None)
+            'date': credential.get('completedOn', None),
+            'issued_by': credential.get('issuedBy', None) or credential.get('issuer', None)
         }
 
         return extracted
