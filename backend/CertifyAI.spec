@@ -16,6 +16,15 @@ from PyInstaller.utils.hooks import collect_submodules
 HERE         = os.path.abspath(SPECPATH)
 FRONTEND_DIR = os.path.join(HERE, '..', 'frontend')
 POPPLER_BIN  = os.path.join(HERE, 'poppler', 'poppler-24.08.0', 'Library', 'bin')
+datas = [
+    # Frontend static files
+    (os.path.join(FRONTEND_DIR, 'index.html'), 'frontend'),
+    (os.path.join(FRONTEND_DIR, 'script.js'), 'frontend'),
+    (os.path.join(FRONTEND_DIR, 'style.css'), 'frontend'),
+]
+if os.path.isdir(POPPLER_BIN):
+    # Poppler binaries for PDF→image conversion
+    datas.append((POPPLER_BIN, 'poppler/bin'))
 
 block_cipher = None
 
@@ -82,14 +91,7 @@ a = Analysis(
     ['desktop.py'],
     pathex=[HERE],
     binaries=[],
-    datas=[
-        # Frontend static files
-        (os.path.join(FRONTEND_DIR, 'index.html'), 'frontend'),
-        (os.path.join(FRONTEND_DIR, 'script.js'), 'frontend'),
-        (os.path.join(FRONTEND_DIR, 'style.css'), 'frontend'),
-        # Poppler binaries for PDF→image conversion
-        (POPPLER_BIN, 'poppler/bin'),
-    ],
+    datas=datas,
     hiddenimports=hidden_imports,
     hookspath=[],
     hooksconfig={},
