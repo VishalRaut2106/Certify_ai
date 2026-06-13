@@ -59,7 +59,7 @@ jobs:
           VERSION="$(echo "$VERSION" | xargs)"
           VERSION="${VERSION#CertifyAI }"
           if ! git check-ref-format --allow-onelevel "refs/tags/$VERSION"; then
-            echo "Invalid release tag: '$VERSION'. Use a valid tag like v2.0.5-desktop."
+            echo "Invalid release tag: '$VERSION'. Tag names cannot contain spaces and must be valid git ref names."
             exit 1
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
