@@ -12,10 +12,10 @@ def test_exe_imports():
     exe_path = os.path.join('dist', 'CertifyAI', 'CertifyAI.exe')
     
     if not os.path.exists(exe_path):
-        print("❌ ERROR: Executable not found at", exe_path)
+        print("[ERROR] Executable not found at", exe_path)
         return False
     
-    print("🔍 Testing executable for import errors...")
+    print("[Testing] Checking executable for import errors...")
     print(f"   Path: {exe_path}")
     print()
     
@@ -36,7 +36,7 @@ def test_exe_imports():
         
         if poll is None:
             # Process is running - SUCCESS!
-            print("✅ PASS: Executable started successfully!")
+            print("[PASS] Executable started successfully!")
             print("   No import errors detected.")
             process.terminate()
             process.wait(timeout=5)
@@ -46,20 +46,20 @@ def test_exe_imports():
             stdout, stderr = process.communicate()
             
             if "ImportError" in stderr or "ModuleNotFoundError" in stderr:
-                print("❌ FAIL: Import error detected!")
+                print("[FAIL] Import error detected!")
                 print()
                 print("Error details:")
                 print(stderr)
                 return False
             else:
-                print("⚠️  WARNING: Process exited unexpectedly")
+                print("[WARNING] Process exited unexpectedly")
                 print("   Exit code:", poll)
                 if stderr:
                     print("   Error output:", stderr)
                 return False
                 
     except Exception as e:
-        print(f"❌ FAIL: Could not test executable")
+        print(f"[FAIL] Could not test executable")
         print(f"   Error: {e}")
         return False
 
@@ -74,9 +74,9 @@ if __name__ == "__main__":
     print()
     print("="*60)
     if success:
-        print("✅ BUILD VALIDATED - Safe to distribute")
+        print("[PASS] BUILD VALIDATED - Safe to distribute")
     else:
-        print("❌ BUILD FAILED VALIDATION - Do NOT distribute")
+        print("[FAIL] BUILD FAILED VALIDATION - Do NOT distribute")
         print("   Fix the errors above before releasing")
     print("="*60)
     
