@@ -79,7 +79,9 @@ a = Analysis(
     binaries=[],
     datas=[
         # Frontend static files
-        (FRONTEND_DIR, 'frontend'),
+        (os.path.join(FRONTEND_DIR, 'index.html'), 'frontend'),
+        (os.path.join(FRONTEND_DIR, 'script.js'), 'frontend'),
+        (os.path.join(FRONTEND_DIR, 'style.css'), 'frontend'),
         # Poppler binaries for PDF→image conversion
         (POPPLER_BIN, 'poppler/bin'),
     ],
