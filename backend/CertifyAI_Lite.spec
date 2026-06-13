@@ -40,6 +40,12 @@ hidden_imports = [
     'openpyxl.styles',
     'pdf2image',
     'webview',
+    # Fix pyparsing issue
+    'pyparsing',
+    'packaging',
+    'packaging.version',
+    'packaging.specifiers',
+    'packaging.requirements',
 ]
 
 a = Analysis(

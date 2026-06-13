@@ -71,6 +71,11 @@ hidden_imports = [
     'dotenv',
     'h11',
     'email.message',
+    # Fix pyparsing issue - explicitly add
+    'pyparsing',
+    'packaging.version',
+    'packaging.specifiers',
+    'packaging.requirements',
 ] + collect_submodules('pkg_resources') + collect_submodules('packaging')
 
 a = Analysis(
