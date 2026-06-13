@@ -15,6 +15,11 @@ import os
 HERE         = os.path.abspath(SPECPATH)
 FRONTEND_DIR = os.path.join(HERE, '..', 'frontend')
 POPPLER_BIN  = os.path.join(HERE, 'poppler', 'poppler-24.08.0', 'Library', 'bin')
+datas = [
+    (FRONTEND_DIR, 'frontend'),
+]
+if os.path.isdir(POPPLER_BIN):
+    datas.append((POPPLER_BIN, 'poppler/bin'))
 
 block_cipher = None
 
@@ -52,10 +57,7 @@ a = Analysis(
     ['desktop.py'],
     pathex=[HERE],
     binaries=[],
-    datas=[
-        (FRONTEND_DIR, 'frontend'),
-        (POPPLER_BIN, 'poppler/bin'),
-    ],
+    datas=datas,
     hiddenimports=hidden_imports,
     hookspath=[],
     hooksconfig={},
