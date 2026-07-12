@@ -88,7 +88,7 @@ hidden_imports = [
 ] + collect_submodules('pkg_resources') + collect_submodules('packaging')
 
 a = Analysis(
-    ['desktop.py'],
+    ['desktop_simple.py'],  # Use simple version without pywebview
     pathex=[HERE],
     binaries=[],
     datas=datas,
@@ -140,6 +140,11 @@ a = Analysis(
         'sndhdr',
         'uu',
         'xdrlib',
+        # Exclude .NET/CLR runtime (pywebview tries to use it on Windows)
+        'clr',
+        'clr_loader',
+        'pythonnet',
+        'Python.Runtime',
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,

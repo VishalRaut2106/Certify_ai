@@ -54,7 +54,7 @@ hidden_imports = [
 ]
 
 a = Analysis(
-    ['desktop.py'],
+    ['desktop_simple.py'],  # Use simple version without pywebview
     pathex=[HERE],
     binaries=[],
     datas=datas,
@@ -67,7 +67,8 @@ a = Analysis(
         'scipy', 'sklearn', 'scikit_learn', 'redis', 'pymongo', 'motor',
         'pytest', 'black', 'mypy', 'ruff', 'matplotlib',
         'tkinter', '_tkinter', 'unittest', 'test', 'tests',
-        # Note: pythonnet is required by pywebview on Windows
+        # Exclude pywebview and pythonnet - using browser instead
+        'webview', 'clr', 'clr_loader', 'pythonnet', 'Python.Runtime',
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
