@@ -11,6 +11,9 @@ venv/
 env/
 backend/venv/
 
+# Kiro spec files (local only)
+.kiro/
+
 # Environment files
 .env
 .env.*
@@ -46,4 +49,4 @@ backend/poppler/
 # PyInstaller build artifacts
 backend/build/
 backend/dist/
-*.spec.bak
+*.spec.bak
