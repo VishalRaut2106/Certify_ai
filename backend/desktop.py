@@ -5,8 +5,7 @@ Handles both development mode and PyInstaller bundled mode.
 """
 
 import webview
-import threading
-import uvicorn
+import subprocess
 import time
 import requests
 import sys
@@ -106,10 +105,25 @@ SPLASH_HTML = """
 
 
 def run_server():
-    """Run FastAPI in a background daemon thread."""
-    # Import here so path patches above are in effect
-    from app import app as fastapi_app
-    uvicorn.run(fastapi_app, host='127.0.0.1', port=PORT, log_level='error')
+    """Run FastAPI in a subprocess to avoid pythonnet threading issues."""
+    # Create a simple server starter script
+    server_script = os.path.join(BACKEND_DIR, '_temp_server.py')
+    with open(server_script, 'w') as f:
+        f.write(f'''
+import sys
+sys.path.insert(0, r"{BACKEND_DIR}")
+import uvicorn
+from app import app
+uvicorn.run(app, host="127.0.0.1", port={PORT}, log_level="error")
+''')
+    
+    # Start server as subprocess
+    return subprocess.Popen(
+        [sys.executable, server_script],
+        cwd=BACKEND_DIR,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
 
 
 def wait_for_server(timeout: int = 30) -> bool:
@@ -127,7 +141,22 @@ def wait_for_server(timeout: int = 30) -> bool:
 
 
 def on_closed():
-    """Kill the process when the window is closed (stops the daemon server)."""
+    """Kill the server process when the window is closed."""
+    try:
+        if hasattr(on_closed, 'server_process'):
+            on_closed.server_process.terminate()
+            on_closed.server_process.wait(timeout=5)
+    except:
+        pass
+    
+    # Clean up temp script
+    try:
+        temp_script = os.path.join(BACKEND_DIR, '_temp_server.py')
+        if os.path.exists(temp_script):
+            os.remove(temp_script)
+    except:
+        pass
+    
     os._exit(0)
 
 
@@ -145,9 +174,9 @@ def main():
     )
 
     def _boot():
-        # 2. Start FastAPI server in the background
-        server_thread = threading.Thread(target=run_server, daemon=True)
-        server_thread.start()
+        # 2. Start FastAPI server in a subprocess
+        server_process = run_server()
+        on_closed.server_process = server_process  # Store for cleanup
 
         # 3. Wait for server
         ready = wait_for_server(timeout=30)
@@ -157,6 +186,7 @@ def main():
                 "'Error: could not start server. Please restart the app.'"
             )
             time.sleep(4)
+            server_process.terminate()
             os._exit(1)
 
         # 4. Destroy splash and open the real window
