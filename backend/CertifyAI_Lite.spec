@@ -67,8 +67,7 @@ a = Analysis(
         'scipy', 'sklearn', 'scikit_learn', 'redis', 'pymongo', 'motor',
         'pytest', 'black', 'mypy', 'ruff', 'matplotlib',
         'tkinter', '_tkinter', 'unittest', 'test', 'tests',
-        # Exclude pythonnet to force EdgeChromium backend
-        'clr', 'clr_loader', 'pythonnet', 'Python.Runtime',
+        # Note: pythonnet is required by pywebview on Windows
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,

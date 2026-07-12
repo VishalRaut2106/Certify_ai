@@ -203,7 +203,17 @@ def main():
         main_win.events.closed += on_closed
 
     splash.events.shown += _boot
-    webview.start(debug=False, gui='edgechromium')  # Use EdgeChromium instead of default
+    
+    # Try different GUI backends in order of preference
+    try:
+        webview.start(debug=False, gui='edgechromium')
+    except Exception as e:
+        print(f"EdgeChromium failed: {e}")
+        try:
+            webview.start(debug=False, gui='mshtml')  # Fallback to IE11 engine
+        except Exception as e2:
+            print(f"MSHTML also failed: {e2}")
+            print("Please use run_app.py instead, or install Edge WebView2 Runtime")
 
 
 if __name__ == '__main__':
