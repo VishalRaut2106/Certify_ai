@@ -63,11 +63,10 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        # Aggressively exclude unused packages
+        # Exclude only truly unused packages - be conservative
         'scipy', 'sklearn', 'scikit_learn', 'redis', 'pymongo', 'motor',
-        'pytest', 'black', 'mypy', 'ruff', 'matplotlib', 'pandas',
+        'pytest', 'black', 'mypy', 'ruff', 'matplotlib',
         'tkinter', '_tkinter', 'unittest', 'test', 'tests',
-        'setuptools', 'distutils', 'wheel', 'pip',
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,

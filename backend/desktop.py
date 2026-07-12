@@ -173,7 +173,7 @@ def main():
         main_win.events.closed += on_closed
 
     splash.events.shown += _boot
-    webview.start(debug=False)
+    webview.start(debug=False, gui='edgechromium')  # Use EdgeChromium instead of default
 
 
 if __name__ == '__main__':

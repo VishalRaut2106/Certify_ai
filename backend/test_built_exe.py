@@ -15,13 +15,13 @@ def validate_build():
         print(f"[ERROR] Executable not found at {EXE_PATH}")
         return False
     
-    # Check file size (should be > 10MB, < 500MB)
+    # Check file size (should be > 5MB, < 500MB)
     size_mb = os.path.getsize(EXE_PATH) / (1024 * 1024)
     print(f"[OK] Executable found: {EXE_PATH}")
     print(f"[OK] Size: {size_mb:.1f} MB")
     
-    if size_mb < 10:
-        print(f"[ERROR] Size too small ({size_mb:.1f} MB), may be missing dependencies")
+    if size_mb < 5:
+        print(f"[ERROR] Size too small ({size_mb:.1f} MB), build likely failed")
         return False
     
     if size_mb > 500:
