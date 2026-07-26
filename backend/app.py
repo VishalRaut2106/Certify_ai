@@ -8,7 +8,7 @@ from ocr import extract_text
 from qr_decoder import decode_qr
 from comparator import compare_fields
 import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 import shutil
 import os
 import sys
@@ -126,41 +126,61 @@ def build_excel(results) -> bytes:
     ws = wb.active
     ws.title = "Verification Results"
 
-    header_font = Font(bold=True, color="FFFFFF")
-    header_fill = PatternFill(start_color="1a1a1a", end_color="1a1a1a", fill_type="solid")
+    # Professional badge blue for headers
+    header_font = Font(bold=True, color="FFFFFF", size=12)
+    header_fill = PatternFill(start_color="2563EB", end_color="2563EB", fill_type="solid")
+    
+    # Thin borders for all cells
+    thin_border = Border(left=Side(style='thin', color='E5E7EB'), 
+                         right=Side(style='thin', color='E5E7EB'), 
+                         top=Side(style='thin', color='E5E7EB'), 
+                         bottom=Side(style='thin', color='E5E7EB'))
 
     headers = ["File Name", "Name on Certificate", "Issued By", "Course", "Date", "Result"]
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col, value=header)
         cell.font  = header_font
         cell.fill  = header_fill
-        cell.alignment = Alignment(horizontal="center")
+        cell.border = thin_border
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Increase header row height
+    ws.row_dimensions[1].height = 25
 
-    green_fill  = PatternFill(start_color="f0fdf4", end_color="f0fdf4", fill_type="solid")
-    red_fill    = PatternFill(start_color="fff1f2", end_color="fff1f2", fill_type="solid")
-    orange_fill = PatternFill(start_color="fffbeb", end_color="fffbeb", fill_type="solid")
+    # Status badge colors
+    green_fill  = PatternFill(start_color="DCFCE7", end_color="DCFCE7", fill_type="solid")  # Light green
+    red_fill    = PatternFill(start_color="FEE2E2", end_color="FEE2E2", fill_type="solid")  # Light red
+    orange_fill = PatternFill(start_color="FEF3C7", end_color="FEF3C7", fill_type="solid")  # Light yellow/orange
 
     for row, result in enumerate(results, 2):
-        ws.cell(row=row, column=1, value=result['filename'])
-        ws.cell(row=row, column=2, value=result['name'])
-        ws.cell(row=row, column=3, value=result['issued_by'])
-        ws.cell(row=row, column=4, value=result['course'])
-        ws.cell(row=row, column=5, value=result['date'])
-        ws.cell(row=row, column=6, value=result['flag'])
+        ws.cell(row=row, column=1, value=result['filename']).alignment = Alignment(horizontal="left", vertical="center")
+        ws.cell(row=row, column=2, value=result['name']).alignment = Alignment(horizontal="left", vertical="center")
+        ws.cell(row=row, column=3, value=result['issued_by']).alignment = Alignment(horizontal="left", vertical="center")
+        ws.cell(row=row, column=4, value=result['course']).alignment = Alignment(horizontal="left", vertical="center")
+        ws.cell(row=row, column=5, value=result['date']).alignment = Alignment(horizontal="center", vertical="center")
+        
+        # Result column centered
+        ws.cell(row=row, column=6, value=result['flag']).alignment = Alignment(horizontal="center", vertical="center")
 
         flag = result['flag']
         fill = green_fill if flag == 'Verified' else (orange_fill if 'Manual' in flag else red_fill)
 
         for col in range(1, 7):
-            ws.cell(row=row, column=col).fill      = fill
-            ws.cell(row=row, column=col).alignment = Alignment(horizontal="center")
+            cell = ws.cell(row=row, column=col)
+            # Only apply background color to the Result column to keep it clean, or the whole row?
+            # Usually coloring the whole row is easier to read
+            cell.fill = fill
+            cell.border = thin_border
+            
+        # Give data rows a little padding
+        ws.row_dimensions[row].height = 20
 
-    ws.column_dimensions['A'].width = 28
-    ws.column_dimensions['B'].width = 22
+    ws.column_dimensions['A'].width = 30
+    ws.column_dimensions['B'].width = 25
     ws.column_dimensions['C'].width = 25
     ws.column_dimensions['D'].width = 45
     ws.column_dimensions['E'].width = 18
-    ws.column_dimensions['F'].width = 25
+    ws.column_dimensions['F'].width = 30
 
     stream = io.BytesIO()
     wb.save(stream)
