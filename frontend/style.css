@@ -145,6 +145,21 @@ html, body {
   font-size: 13.5px;
   color: #8b949e;
 }
+.publisher-info {
+  margin-top: 3.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #21262d;
+  width: max-content;
+}
+.publisher-text {
+  font-size: 12px;
+  color: #484f58;
+  letter-spacing: 0.02em;
+}
+.publisher-text strong {
+  color: #8b949e;
+  font-weight: 600;
+}
 
 /* ── RIGHT ────────────────────────────────────── */
 .page-right {
