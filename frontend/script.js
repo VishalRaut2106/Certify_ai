@@ -278,3 +278,37 @@ function renderResult(data) {
 
   syncHeight();
 }
+
+// ── Version Checker ───────────────────────────
+const CURRENT_VERSION = 'v2.1.2';
+const REPO_LATEST_API = 'https://api.github.com/repos/VishalRaut2106/Certify_ai/releases/latest';
+
+async function checkVersion() {
+  const badge = document.getElementById('version-badge');
+  if (!badge) return;
+  
+  try {
+    const res = await fetch(REPO_LATEST_API);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const latestVersion = data.tag_name;
+    
+    if (latestVersion && latestVersion !== CURRENT_VERSION) {
+      // Update available
+      badge.textContent = 'Update Available (' + latestVersion + ')';
+      badge.href = data.html_url;
+      badge.classList.add('update-available');
+    } else {
+      // Up to date
+      badge.textContent = CURRENT_VERSION;
+      badge.href = 'https://github.com/VishalRaut2106/Certify_ai/releases';
+    }
+  } catch (e) {
+    // Fallback if API fails
+    badge.textContent = CURRENT_VERSION;
+    badge.href = 'https://github.com/VishalRaut2106/Certify_ai/releases';
+  }
+}
+
+// Run version check on load
+window.addEventListener('DOMContentLoaded', checkVersion);

@@ -59,7 +59,7 @@ html, body {
   font-weight: 500;
   transition: all 0.2s ease;
 }
-.github-tag:hover {
+.github-tag:hover, .portfolio-tag:hover {
   background: #1c2128;
   border-color: #8b949e;
   color: #fff;
@@ -70,6 +70,16 @@ html, body {
   border-color: transparent;
   padding: 4px 8px;
   font-family: monospace;
+}
+.version-tag.update-available {
+  background: #1f6feb;
+  color: #fff;
+  border-color: #388bfd;
+  font-weight: 600;
+  cursor: pointer;
+}
+.version-tag.update-available:hover {
+  background: #388bfd;
 }
 
 /* ── PAGE LAYOUT ──────────────────────────────── */
