@@ -182,6 +182,54 @@ def build_excel(results) -> bytes:
     ws.column_dimensions['F'].width = 18
     ws.column_dimensions['G'].width = 30
 
+    # Calculate summary counts
+    verified_cnt = 0
+    manual_cnt = 0
+    fraud_cnt = 0
+    for res in results:
+        flag = res.get('flag', '')
+        if flag == 'Verified':
+            verified_cnt += 1
+        elif 'Manual' in flag:
+            manual_cnt += 1
+        else:
+            fraud_cnt += 1
+
+    # Add summary section at the bottom
+    summary_start_row = len(results) + 4
+    
+    # Summary Header
+    summary_header_cell = ws.cell(row=summary_start_row, column=2, value="Verification Summary")
+    summary_header_cell.font = Font(bold=True, size=11, color="FFFFFF")
+    summary_header_cell.fill = header_fill
+    summary_header_cell.alignment = Alignment(horizontal="left", vertical="center")
+    
+    # Merge cells for header
+    ws.merge_cells(start_row=summary_start_row, start_column=2, end_row=summary_start_row, end_column=3)
+
+    summary_data = [
+        ("Total Verified", verified_cnt, green_fill),
+        ("Needs Manual Review", manual_cnt, orange_fill),
+        ("Possible Fraud", fraud_cnt, red_fill),
+        ("Total Processed", len(results), PatternFill(start_color="F3F4F6", end_color="F3F4F6", fill_type="solid"))
+    ]
+
+    for i, (label, count, fill) in enumerate(summary_data):
+        curr_row = summary_start_row + 1 + i
+        label_cell = ws.cell(row=curr_row, column=2, value=label)
+        count_cell = ws.cell(row=curr_row, column=3, value=count)
+        
+        label_cell.font = Font(bold=True)
+        label_cell.fill = fill
+        label_cell.border = thin_border
+        
+        count_cell.font = Font(bold=True)
+        count_cell.fill = fill
+        count_cell.border = thin_border
+        count_cell.alignment = Alignment(horizontal="center", vertical="center")
+        
+        ws.row_dimensions[curr_row].height = 20
+
     stream = io.BytesIO()
     wb.save(stream)
     return stream.getvalue()

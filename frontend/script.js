@@ -221,8 +221,13 @@ btnBulk.addEventListener('click', async () => {
     let completed = 0;
     const allResults = [];
 
-    // Process files one by one for real-time progress
-    for (const file of bulkFiles) {
+    // Process files concurrently for speed while keeping real-time progress
+    const MAX_CONCURRENT = 4;
+    let currentIndex = 0;
+
+    const processNext = async () => {
+      if (currentIndex >= bulkFiles.length) return;
+      const file = bulkFiles[currentIndex++];
       const fd = new FormData();
       fd.append('certificate', file);
       
@@ -247,7 +252,16 @@ btnBulk.addEventListener('click', async () => {
       progressText.textContent = `Verifying ${completed} of ${total}...`;
       progressPercent.textContent = `${pct}%`;
       progressBarFill.style.width = `${pct}%`;
+
+      await processNext(); // Process the next file recursively
+    };
+
+    // Start workers up to MAX_CONCURRENT
+    const workers = [];
+    for (let i = 0; i < Math.min(MAX_CONCURRENT, total); i++) {
+      workers.push(processNext());
     }
+    await Promise.all(workers);
 
     // Done with verification. Now generate Excel via the new backend endpoint.
     progressText.textContent = 'Generating Excel report...';
