@@ -43,21 +43,21 @@
     <!-- Left: info -->
     <div class="page-left">
       <p class="left-label">Certificate Verification</p>
-      <h1>Verify in<br/>seconds.</h1>
-      <p class="left-desc">Upload a certificate and our system cross-checks the printed text against the embedded QR code to confirm authenticity.</p>
+      <h1>Verify with<br/>absolute certainty.</h1>
+      <p class="left-desc">Cross-check printed text against embedded QR data instantly. Built for scale, designed for trust.</p>
 
       <div class="info-blocks">
         <div class="info-block">
-          <span class="info-num">01</span>
-          <span class="info-text">Upload certificate</span>
+          <span class="info-num">1</span>
+          <span class="info-text">Upload documents</span>
         </div>
         <div class="info-block">
-          <span class="info-num">02</span>
-          <span class="info-text">AI reads text & QR</span>
+          <span class="info-num">2</span>
+          <span class="info-text">AI extracts & matches</span>
         </div>
         <div class="info-block">
-          <span class="info-num">03</span>
-          <span class="info-text">Instant verdict</span>
+          <span class="info-num">3</span>
+          <span class="info-text">Instant fraud detection</span>
         </div>
       </div>
     </div>
@@ -66,9 +66,10 @@
     <div class="page-right">
 
       <!-- Mode toggle -->
-      <div class="mode-toggle">
-        <button class="mode-btn active" id="tab-single" onclick="switchTab('single')">Single</button>
-        <button class="mode-btn" id="tab-bulk" onclick="switchTab('bulk')">Bulk</button>
+      <div class="segment-control">
+        <div class="segment-pill" id="segment-pill"></div>
+        <button class="segment-btn active" id="tab-single" onclick="switchTab('single')">Single</button>
+        <button class="segment-btn" id="tab-bulk" onclick="switchTab('bulk')">Bulk</button>
       </div>
 
       <!-- Card flip scene -->
@@ -76,7 +77,7 @@
         <div class="flipper" id="flipper">
 
           <!-- FRONT: Single -->
-          <div class="card card-front">
+          <div class="card card-front glass-card">
             <div class="drop-zone" id="upload-area-single">
               <input type="file" id="file-input-single" accept="image/*,.pdf" />
               <div class="drop-inner">
@@ -124,7 +125,7 @@
           </div>
 
           <!-- BACK: Bulk -->
-          <div class="card card-back">
+          <div class="card card-back glass-card">
             <div class="drop-zone" id="upload-area-bulk">
               <input type="file" id="file-input-bulk" accept="image/*,.pdf" multiple />
               <div class="drop-inner">
@@ -143,10 +144,13 @@
 
             <button class="btn-verify" id="verify-btn-bulk" disabled>Verify &amp; Download Excel</button>
 
-            <!-- Loader -->
-            <div class="loader" id="loader-bulk">
-              <div class="loader-track"><div class="loader-bar"></div></div>
-              <span id="loader-bulk-text">Processing…</span>
+            <!-- Progress Bar -->
+            <div class="progress-container" id="progress-bulk">
+              <div class="progress-header">
+                <span id="progress-text">Verifying 0 of 0...</span>
+                <span id="progress-percent">0%</span>
+              </div>
+              <div class="progress-track"><div class="progress-bar-fill" id="progress-bar-fill"></div></div>
             </div>
 
             <!-- Error -->

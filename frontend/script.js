@@ -27,12 +27,16 @@ const inputBulk       = document.getElementById('file-input-bulk');
 const bulkLabel       = document.getElementById('bulk-label');
 const bulkFileList    = document.getElementById('bulk-file-list');
 const btnBulk         = document.getElementById('verify-btn-bulk');
-const loaderBulk      = document.getElementById('loader-bulk');
-const loaderBulkText  = document.getElementById('loader-bulk-text');
 const errorBulk       = document.getElementById('error-bulk');
 const bulkDone        = document.getElementById('bulk-done');
 const doneTitle       = document.getElementById('done-title');
 const doneSub         = document.getElementById('done-sub');
+
+// Progress Bar
+const progressBulk    = document.getElementById('progress-bulk');
+const progressText    = document.getElementById('progress-text');
+const progressPercent = document.getElementById('progress-percent');
+const progressBarFill = document.getElementById('progress-bar-fill');
 
 let currentTab  = 'single';
 let singleFile  = null;
@@ -51,11 +55,23 @@ function syncHeight() {
 }
 
 // ── Tab switch ────────────────────────────────
+const segmentPill = document.getElementById('segment-pill');
+
 function switchTab(tab) {
   if (tab === currentTab) return;
   currentTab = tab;
-  tabSingle.classList.toggle('active', tab === 'single');
-  tabBulk.classList.toggle('active', tab === 'bulk');
+  
+  // Segment control animation
+  if (tab === 'single') {
+    tabSingle.classList.add('active');
+    tabBulk.classList.remove('active');
+    segmentPill.style.transform = 'translateX(0)';
+  } else {
+    tabBulk.classList.add('active');
+    tabSingle.classList.remove('active');
+    segmentPill.style.transform = 'translateX(100%)';
+  }
+  
   flipper.classList.toggle('flipped', tab === 'bulk');
   // After transition sync height
   setTimeout(syncHeight, 520);
@@ -190,41 +206,80 @@ btnBulk.addEventListener('click', async () => {
   if (!bulkFiles.length) return;
 
   hide(errorBulk); hide(bulkDone);
-  loaderBulkText.textContent = `Processing ${bulkFiles.length} file${bulkFiles.length > 1 ? 's' : ''}\u2026`;
-  show(loaderBulk);
+  
+  // Reset and show progress bar
+  progressText.textContent = `Verifying 0 of ${bulkFiles.length}...`;
+  progressPercent.textContent = '0%';
+  progressBarFill.style.width = '0%';
+  show(progressBulk);
+  
   btnBulk.disabled = true;
   syncHeight();
 
   try {
-    const fd = new FormData();
-    bulkFiles.forEach(f => fd.append('certificates', f));
+    const total = bulkFiles.length;
+    let completed = 0;
+    const allResults = [];
 
-    const res = await fetch(API_BULK, { method: 'POST', body: fd });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: 'Server error' }));
-      errorBulk.textContent = err.detail || 'Server error during bulk verification.';
-      show(errorBulk);
-      return;
+    // Process files one by one for real-time progress
+    for (const file of bulkFiles) {
+      const fd = new FormData();
+      fd.append('certificate', file);
+      
+      try {
+        const res = await fetch(API_SINGLE, { method: 'POST', body: fd });
+        if (!res.ok) throw new Error('Failed');
+        const data = await res.json();
+        
+        // Include filename in result for the Excel builder
+        data.filename = file.name;
+        allResults.push(data);
+      } catch (err) {
+        // Log failure but continue processing the rest
+        allResults.push({
+          filename: file.name,
+          verdict: 'Manual Review - Processing Error'
+        });
+      }
+      
+      completed++;
+      const pct = Math.round((completed / total) * 100);
+      progressText.textContent = `Verifying ${completed} of ${total}...`;
+      progressPercent.textContent = `${pct}%`;
+      progressBarFill.style.width = `${pct}%`;
     }
 
+    // Done with verification. Now generate Excel via the new backend endpoint.
+    progressText.textContent = 'Generating Excel report...';
+    
+    const excelRes = await fetch('/generate-excel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(allResults)
+    });
+    
+    if (!excelRes.ok) throw new Error('Excel generation failed');
+
     // Trigger Excel download
-    const blob = await res.blob();
+    const blob = await excelRes.blob();
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href = url; a.download = 'verification_results.xlsx'; a.click();
     URL.revokeObjectURL(url);
+    
     doneTitle.textContent = 'Verification complete';
     doneSub.textContent   = 'Excel report is downloading';
     show(bulkDone);
 
-  } catch {
-    errorBulk.textContent = 'Connection failed. Is the server running?';
+  } catch (err) {
+    errorBulk.textContent = err.message || 'Connection failed. Is the server running?';
     show(errorBulk);
   } finally {
-    hide(loaderBulk);
-    btnBulk.disabled = false;
-    syncHeight();
+    setTimeout(() => {
+      hide(progressBulk);
+      btnBulk.disabled = false;
+      syncHeight();
+    }, 1500); // Keep progress bar visible briefly before hiding
   }
 });
 

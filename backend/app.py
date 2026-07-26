@@ -215,3 +215,44 @@ async def verify_bulk(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": 'attachment; filename="verification_results.xlsx"'}
     )
+
+
+from pydantic import BaseModel
+from typing import Optional, Dict, Any
+
+class VerificationResult(BaseModel):
+    filename: str
+    name: Optional[Dict[str, Any]] = None
+    issued_by: Optional[Dict[str, Any]] = None
+    course: Optional[Dict[str, Any]] = None
+    date: Optional[Dict[str, Any]] = None
+    verdict: str
+
+@app.post("/generate-excel")
+async def generate_excel(results_payload: List[Dict[str, Any]]):
+    """
+    Accepts a list of verification results from the frontend and returns an Excel file.
+    This enables real-time progress tracking on the client side.
+    """
+    # Transform the payload to match what build_excel expects
+    # build_excel expects a list of dicts with:
+    # 'filename', 'name', 'issued_by', 'course', 'date', 'flag'
+    
+    formatted_results = []
+    for res in results_payload:
+        formatted_results.append({
+            'filename': res.get('filename', 'Unknown'),
+            'name': res.get('name', {}).get('qr', '—') if res.get('name') else '—',
+            'issued_by': res.get('issued_by', {}).get('qr', '—') if res.get('issued_by') else '—',
+            'course': res.get('course', {}).get('qr', '—') if res.get('course') else '—',
+            'date': res.get('date', {}).get('qr', '—') if res.get('date') else '—',
+            'flag': res.get('verdict', 'Error')
+        })
+
+    excel_bytes = build_excel(formatted_results)
+    
+    return StreamingResponse(
+        io.BytesIO(excel_bytes),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="verification_results.xlsx"'}
+    )
