@@ -33,6 +33,18 @@ if not exist "venv\Scripts\python.exe" (
     echo.
 )
 
+:: Check if poppler is installed (required for PDF processing)
+if not exist "poppler\poppler-24.08.0\Library\bin\pdfinfo.exe" (
+    echo [INFO] Poppler is missing. Downloading Poppler for PDF processing...
+    if not exist "poppler" mkdir poppler
+    powershell -Command "Invoke-WebRequest -Uri 'https://github.com/oschwartz10612/poppler-windows/releases/download/v24.08.0-0/Release-24.08.0-0.zip' -OutFile 'poppler\poppler.zip'"
+    echo [INFO] Extracting Poppler...
+    powershell -Command "Expand-Archive -Path 'poppler\poppler.zip' -DestinationPath 'poppler' -Force"
+    del poppler\poppler.zip
+    echo [INFO] Poppler installed successfully!
+    echo.
+)
+
 :: Run the application
 echo [INFO] Launching Application...
 venv\Scripts\python desktop_simple.py
