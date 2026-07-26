@@ -40,13 +40,36 @@ html, body {
   border-radius: 7px;
   display: flex; align-items: center; justify-content: center;
 }
+.nav-badges {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
 .nav-tag {
   font-size: 12px;
-  color: #484f58;
+  color: #c9d1d9;
   background: #161b22;
   border: 1px solid #30363d;
-  padding: 3px 10px;
+  padding: 4px 12px;
   border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+.github-tag:hover {
+  background: #1c2128;
+  border-color: #8b949e;
+  color: #fff;
+}
+.version-tag {
+  color: #484f58;
+  background: transparent;
+  border-color: transparent;
+  padding: 4px 8px;
+  font-family: monospace;
 }
 
 /* ── PAGE LAYOUT ──────────────────────────────── */
@@ -115,7 +138,7 @@ html, body {
 
 /* ── RIGHT ────────────────────────────────────── */
 .page-right {
-  width: 420px;
+  width: 440px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -190,14 +213,14 @@ html, body {
 
 /* ── DROP ZONE ────────────────────────────────── */
 .drop-zone {
-  border: 1px dashed #30363d;
+  border: 2px dashed #30363d;
   border-radius: 10px;
-  padding: 2rem 1rem;
+  padding: 4rem 1rem;
   text-align: center;
   cursor: pointer;
   position: relative;
   background: #0d1117;
-  transition: border-color 0.15s, background 0.15s;
+  transition: all 0.2s ease;
   overflow: hidden;
 }
 .drop-zone:hover, .drop-zone.drag-over {
