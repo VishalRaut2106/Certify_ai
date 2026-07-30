@@ -13,8 +13,19 @@ if getattr(sys, 'frozen', False):
     os.environ['TESSDATA_PREFIX'] = os.path.join(_BASE, 'tesseract', 'tessdata')
     POPPLER_PATH = os.path.join(_BASE, 'poppler', 'bin')
 elif sys.platform == 'win32':
-    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-    os.environ['TESSDATA_PREFIX'] = r'C:\Program Files\Tesseract-OCR\tessdata'
+    # Check project-local tesseract first (auto-downloaded by setup), then system install
+    _LOCAL_TESS = os.path.join(os.path.dirname(__file__), 'tesseract', 'tesseract.exe')
+    _SYSTEM_TESS = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+    if os.path.exists(_LOCAL_TESS):
+        _TESS_DIR = os.path.join(os.path.dirname(__file__), 'tesseract')
+        pytesseract.pytesseract.tesseract_cmd = _LOCAL_TESS
+        os.environ['TESSDATA_PREFIX'] = os.path.join(_TESS_DIR, 'tessdata')
+    elif os.path.exists(_SYSTEM_TESS):
+        pytesseract.pytesseract.tesseract_cmd = _SYSTEM_TESS
+        os.environ['TESSDATA_PREFIX'] = r'C:\Program Files\Tesseract-OCR\tessdata'
+    else:
+        print("[WARNING] Tesseract not found! OCR will not work.")
+        print("[WARNING] Run setup.bat or install Tesseract from https://github.com/UB-Mannheim/tesseract")
     POPPLER_PATH = os.path.join(os.path.dirname(__file__), 'poppler', 'poppler-24.08.0', 'Library', 'bin')
 else:
     # Linux (Docker / Cloud Run) — installed via apt-get

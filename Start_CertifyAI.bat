@@ -1,4 +1,5 @@
 @echo off
+setlocal EnableDelayedExpansion
 title CertifyAI Verification System
 color 0A
 
@@ -9,11 +10,26 @@ echo.
 
 :: Get the directory where the .bat file is located and go there
 cd /d "%~dp0"
-cd backend
+cd src\backend
 
-:: Check if the virtual environment exists
+:: Check if the virtual environment exists AND is valid for this machine
+set NEED_VENV=0
+
 if not exist "venv\Scripts\python.exe" (
-    echo [INFO] First time setup detected. 
+    set NEED_VENV=1
+    echo [INFO] No virtual environment found.
+) else (
+    :: Verify the venv actually works on this PC (catches venvs copied from other machines)
+    venv\Scripts\python.exe --version >nul 2>&1
+    if errorlevel 1 (
+        set NEED_VENV=1
+        echo [INFO] Existing virtual environment is broken ^(likely from another machine^).
+        echo [INFO] Removing stale venv...
+        rmdir /s /q venv
+    )
+)
+
+if !NEED_VENV!==1 (
     echo [INFO] Creating virtual environment... This may take a minute.
     python -m venv venv
     
@@ -27,9 +43,26 @@ if not exist "venv\Scripts\python.exe" (
     
     echo [INFO] Installing required dependencies...
     venv\Scripts\python -m pip install --upgrade pip
-    venv\Scripts\pip install -r requirements.txt
+    venv\Scripts\python -m pip install -r requirements.txt
     
     echo [INFO] Setup complete!
+    echo.
+)
+
+:: Check if Tesseract OCR is available (required for text extraction)
+set TESSERACT_FOUND=0
+if exist "tesseract\tesseract.exe" set TESSERACT_FOUND=1
+if exist "C:\Program Files\Tesseract-OCR\tesseract.exe" set TESSERACT_FOUND=1
+
+if !TESSERACT_FOUND!==0 (
+    echo [INFO] Tesseract OCR is missing. Downloading Tesseract...
+    if not exist "tesseract" mkdir tesseract
+    powershell -Command "Invoke-WebRequest -Uri 'https://github.com/UB-Mannheim/tesseract/releases/download/v5.4.0.20240606/tesseract-ocr-w64-setup-5.4.0.20240606.exe' -OutFile 'tesseract\tesseract-setup.exe'"
+    echo [INFO] Installing Tesseract silently...
+    tesseract\tesseract-setup.exe /S /D=%CD%\tesseract
+    echo [INFO] Cleaning up installer...
+    del tesseract\tesseract-setup.exe
+    echo [INFO] Tesseract installed successfully!
     echo.
 )
 

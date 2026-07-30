@@ -9,7 +9,7 @@ htmlcov/
 .venv/
 venv/
 env/
-backend/venv/
+src/backend/venv/
 
 # Kiro spec files (local only)
 .kiro/
@@ -18,8 +18,8 @@ backend/venv/
 .env
 .env.*
 !.env.example
-backend/.env
-frontend/.env.local
+src/backend/.env
+src/frontend/.env.local
 
 # Logs and local databases
 *.log
@@ -29,13 +29,13 @@ backend_server.log
 certificate_verification.db
 
 # Uploads and generated files
-backend/uploads/
+src/backend/uploads/
 
 # Node / Next.js
 node_modules/
-frontend/node_modules/
+src/frontend/node_modules/
 .next/
-frontend/.next/
+src/frontend/.next/
 dist/
 out/
 
@@ -44,9 +44,10 @@ out/
 Thumbs.db
 .vscode/
 .idea/
-backend/poppler/
+src/backend/poppler/
+src/backend/tesseract/
 
 # PyInstaller build artifacts
-backend/build/
-backend/dist/
+src/backend/build/
+src/backend/dist/
 *.spec.bak
