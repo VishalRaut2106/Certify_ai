@@ -39,6 +39,16 @@ def index():
     return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
 
 
+@app.post("/shutdown")
+@app.get("/shutdown")
+def shutdown_server():
+    def _stop():
+        time.sleep(0.5)
+        os._exit(0)
+    threading.Thread(target=_stop, daemon=True).start()
+    return {"status": "ok", "message": "Server shutting down..."}
+
+
 @app.post("/verify")
 async def verify_certificate(certificate: UploadFile = File(...)):
     ext = os.path.splitext(certificate.filename)[1]

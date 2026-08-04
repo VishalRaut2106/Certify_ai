@@ -48,6 +48,8 @@ src/backend/poppler/
 src/backend/tesseract/
 
 # PyInstaller build artifacts
+build/
+dist/
 src/backend/build/
 src/backend/dist/
 *.spec.bak

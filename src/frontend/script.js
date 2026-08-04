@@ -379,5 +379,33 @@ async function checkVersion() {
   }
 }
 
-// Run version check on load
-window.addEventListener('DOMContentLoaded', checkVersion);
+// Server Shutdown Handler
+function setupShutdownButton() {
+  const stopBtn = document.getElementById('stop-server-btn');
+  if (!stopBtn) return;
+
+  stopBtn.addEventListener('click', async () => {
+    if (confirm('Are you sure you want to stop the CertifyAI server and exit the application?')) {
+      try {
+        await fetch('/shutdown', { method: 'POST' });
+      } catch (e) {
+        console.log('Server shutting down...', e);
+      }
+      document.body.innerHTML = `
+        <div id="shutdown-overlay">
+          <div style="width:64px;height:64px;background:rgba(248,81,73,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 0 20px rgba(248,81,73,0.2);">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f85149" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+          </div>
+          <h2 style="font-size:24px;font-weight:700;color:#f85149;margin-bottom:8px;">Server Stopped</h2>
+          <p style="color:#8b949e;font-size:14px;max-width:380px;line-height:1.5;">The CertifyAI backend server has been terminated cleanly.<br/>You can safely close this browser tab.</p>
+        </div>
+      `;
+    }
+  });
+}
+
+// Run initializers on load
+window.addEventListener('DOMContentLoaded', () => {
+  checkVersion();
+  setupShutdownButton();
+});

@@ -1,13 +1,31 @@
 """
 CertifyAI Simple Desktop Launcher
-Opens the app in default browser - no WebView2 needed
+Opens the app in default browser and displays application terminal
 """
-import uvicorn
-import webbrowser
-import time
-import threading
+import io
 import sys
 import os
+import time
+import threading
+import webbrowser
+import urllib.request
+import uvicorn
+
+# Stream fallback in case console is unavailable
+class NullStream(io.TextIOBase):
+    def write(self, s):
+        return 0
+    def flush(self):
+        pass
+    def isatty(self):
+        return False
+
+if sys.stdout is None:
+    sys.stdout = NullStream()
+if sys.stderr is None:
+    sys.stderr = NullStream()
+if sys.stdin is None:
+    sys.stdin = NullStream()
 
 # Resolve paths for frozen exe
 if getattr(sys, 'frozen', False):
@@ -18,6 +36,21 @@ else:
 
 PORT = 5199
 URL = f'http://127.0.0.1:{PORT}'
+
+def check_existing_instance():
+    """Check if server is already running on PORT; if so, open browser and exit secondary launcher."""
+    try:
+        req = urllib.request.urlopen(f'http://127.0.0.1:{PORT}/', timeout=1)
+        if req.status == 200:
+            print("=" * 60)
+            print(f"  [INFO] CertifyAI is ALREADY running on {URL}")
+            print("  [INFO] Re-opening web browser window...")
+            print("=" * 60)
+            webbrowser.open(URL)
+            time.sleep(1.5)
+            sys.exit(0)
+    except Exception:
+        pass  # No server running yet, proceed to startup
 
 def create_desktop_shortcut():
     """Create a desktop shortcut if it doesn't exist and we are running as an exe"""
@@ -30,7 +63,7 @@ def create_desktop_shortcut():
     
     if not os.path.exists(shortcut_path):
         exe_path = sys.executable
-        # Use PowerShell to create the shortcut using Windows COM objects (no pip packages needed)
+        # Use PowerShell to create the shortcut using Windows COM objects
         ps_script = f'''
         $WshShell = New-Object -comObject WScript.Shell
         $Shortcut = $WshShell.CreateShortcut("{shortcut_path}")
@@ -47,23 +80,26 @@ def create_desktop_shortcut():
 def open_browser():
     """Wait for server, then open browser"""
     create_desktop_shortcut()
-    time.sleep(3)
+    time.sleep(2)
     webbrowser.open(URL)
 
 def main():
+    # 1. Check for single instance on port 5199
+    check_existing_instance()
+
     print("=" * 60)
     print("  CertifyAI - Certificate Verification System")
     print("=" * 60)
     print(f"\n✓ Starting server on {URL}...")
     print("✓ Browser will open automatically...")
-    print("\nPress Ctrl+C to stop the server\n")
+    print("\nPress Ctrl+C or use 'Stop Server' in browser to exit\n")
     
     # Open browser in background
     threading.Thread(target=open_browser, daemon=True).start()
     
     # Start server
     from app import app
-    uvicorn.run(app, host='127.0.0.1', port=PORT, log_level='error')
+    uvicorn.run(app, host='127.0.0.1', port=PORT, log_level='info')
 
 if __name__ == '__main__':
     main()

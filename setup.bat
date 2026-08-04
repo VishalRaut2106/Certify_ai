@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableDelayedExpansion
-title CertifyAI - Setup
+title CertifyAI - One-Time Setup & Build Preparation
 color 0A
 
 echo ===================================================
@@ -8,7 +8,6 @@ echo     CertifyAI - One-Time Setup
 echo ===================================================
 echo.
 
-:: Go to the project's backend folder
 cd /d "%~dp0"
 cd src\backend
 
@@ -76,7 +75,7 @@ if !TESSERACT_FOUND!==1 (
     powershell -Command "Invoke-WebRequest -Uri 'https://github.com/UB-Mannheim/tesseract/releases/download/v5.4.0.20240606/tesseract-ocr-w64-setup-5.4.0.20240606.exe' -OutFile 'tesseract\tesseract-setup.exe'"
     echo       Installing Tesseract silently...
     tesseract\tesseract-setup.exe /S /D=%CD%\tesseract
-    del tesseract\tesseract-setup.exe
+    if exist "tesseract\tesseract-setup.exe" del tesseract\tesseract-setup.exe
     echo       Done.
 )
 echo.
@@ -90,16 +89,25 @@ if exist "poppler\poppler-24.08.0\Library\bin\pdfinfo.exe" (
     powershell -Command "Invoke-WebRequest -Uri 'https://github.com/oschwartz10612/poppler-windows/releases/download/v24.08.0-0/Release-24.08.0-0.zip' -OutFile 'poppler\poppler.zip'"
     echo       Extracting Poppler...
     powershell -Command "Expand-Archive -Path 'poppler\poppler.zip' -DestinationPath 'poppler' -Force"
-    del poppler\poppler.zip
+    if exist "poppler\poppler.zip" del poppler\poppler.zip
     echo       Done.
 )
 echo.
+
+cd /d "%~dp0"
 
 echo ===================================================
 echo     Setup Complete!
 echo ===================================================
 echo.
-echo You can now run the app by double-clicking:
-echo     Start_CertifyAI.bat
+echo You can now:
+echo   1. Launch the app directly: Double-click Start_CertifyAI.bat
+echo   2. Build standalone EXE:   Double-click build_exe.bat
 echo.
+
+set /p BUILD_NOW="Would you like to build dist\CertifyAI.exe now? (y/n): "
+if /i "%BUILD_NOW%"=="y" (
+    call build_exe.bat
+)
+
 pause

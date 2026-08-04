@@ -8,23 +8,29 @@ echo     Starting CertifyAI Verification System
 echo ===================================================
 echo.
 
-:: Get the directory where the .bat file is located and go there
 cd /d "%~dp0"
+
+:: 1. Check if built single-file executable exists
+if exist "dist\CertifyAI.exe" (
+    echo [INFO] Built standalone CertifyAI.exe detected.
+    echo [INFO] Launching CertifyAI standalone application...
+    start "" "dist\CertifyAI.exe"
+    exit /b 0
+)
+
+:: 2. If no dist\CertifyAI.exe, check if user wants to build it or run via python
 cd src\backend
 
-:: Check if the virtual environment exists AND is valid for this machine
 set NEED_VENV=0
 
 if not exist "venv\Scripts\python.exe" (
     set NEED_VENV=1
     echo [INFO] No virtual environment found.
 ) else (
-    :: Verify the venv actually works on this PC (catches venvs copied from other machines)
     venv\Scripts\python.exe --version >nul 2>&1
     if errorlevel 1 (
         set NEED_VENV=1
-        echo [INFO] Existing virtual environment is broken ^(likely from another machine^).
-        echo [INFO] Removing stale venv...
+        echo [INFO] Existing virtual environment is broken. Re-initializing...
         rmdir /s /q venv
     )
 )
@@ -49,7 +55,7 @@ if !NEED_VENV!==1 (
     echo.
 )
 
-:: Check if Tesseract OCR is available (required for text extraction)
+:: Check Tesseract OCR
 set TESSERACT_FOUND=0
 if exist "tesseract\tesseract.exe" set TESSERACT_FOUND=1
 if exist "C:\Program Files\Tesseract-OCR\tesseract.exe" set TESSERACT_FOUND=1
@@ -66,9 +72,9 @@ if !TESSERACT_FOUND!==0 (
     echo.
 )
 
-:: Check if poppler is installed (required for PDF processing)
+:: Check Poppler
 if not exist "poppler\poppler-24.08.0\Library\bin\pdfinfo.exe" (
-    echo [INFO] Poppler is missing. Downloading Poppler for PDF processing...
+    echo [INFO] Poppler is missing. Downloading Poppler...
     if not exist "poppler" mkdir poppler
     powershell -Command "Invoke-WebRequest -Uri 'https://github.com/oschwartz10612/poppler-windows/releases/download/v24.08.0-0/Release-24.08.0-0.zip' -OutFile 'poppler\poppler.zip'"
     echo [INFO] Extracting Poppler...
@@ -78,7 +84,7 @@ if not exist "poppler\poppler-24.08.0\Library\bin\pdfinfo.exe" (
     echo.
 )
 
-:: Run the application
+:: Run the application via Python backend
 echo [INFO] Launching Application...
 venv\Scripts\python desktop_simple.py
 

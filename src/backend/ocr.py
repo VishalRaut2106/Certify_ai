@@ -1,5 +1,8 @@
+# pyrefly: ignore [missing-import]
 import pytesseract
+# pyrefly: ignore [missing-import]
 from PIL import Image, ImageEnhance, ImageFilter
+# pyrefly: ignore [missing-import]
 from pdf2image import convert_from_path
 import re
 import os
@@ -9,9 +12,22 @@ import sys
 if getattr(sys, 'frozen', False):
     # PyInstaller bundle — binaries extracted to sys._MEIPASS
     _BASE = sys._MEIPASS
-    pytesseract.pytesseract.tesseract_cmd = os.path.join(_BASE, 'tesseract', 'tesseract.exe')
-    os.environ['TESSDATA_PREFIX'] = os.path.join(_BASE, 'tesseract', 'tessdata')
-    POPPLER_PATH = os.path.join(_BASE, 'poppler', 'bin')
+    tess_exe = os.path.join(_BASE, 'tesseract', 'tesseract.exe')
+    if os.path.exists(tess_exe):
+        pytesseract.pytesseract.tesseract_cmd = tess_exe
+        os.environ['TESSDATA_PREFIX'] = os.path.join(_BASE, 'tesseract', 'tessdata')
+    else:
+        _SYSTEM_TESS = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+        if os.path.exists(_SYSTEM_TESS):
+            pytesseract.pytesseract.tesseract_cmd = _SYSTEM_TESS
+            os.environ['TESSDATA_PREFIX'] = r'C:\Program Files\Tesseract-OCR\tessdata'
+
+    pop_candidates = [
+        os.path.join(_BASE, 'poppler', 'bin'),
+        os.path.join(_BASE, 'poppler', 'poppler-24.08.0', 'Library', 'bin'),
+        os.path.join(_BASE, 'poppler'),
+    ]
+    POPPLER_PATH = next((p for p in pop_candidates if os.path.exists(os.path.join(p, 'pdfinfo.exe'))), pop_candidates[0])
 elif sys.platform == 'win32':
     # Check project-local tesseract first (auto-downloaded by setup), then system install
     _LOCAL_TESS = os.path.join(os.path.dirname(__file__), 'tesseract', 'tesseract.exe')
@@ -26,7 +42,13 @@ elif sys.platform == 'win32':
     else:
         print("[WARNING] Tesseract not found! OCR will not work.")
         print("[WARNING] Run setup.bat or install Tesseract from https://github.com/UB-Mannheim/tesseract")
-    POPPLER_PATH = os.path.join(os.path.dirname(__file__), 'poppler', 'poppler-24.08.0', 'Library', 'bin')
+    
+    pop_candidates = [
+        os.path.join(os.path.dirname(__file__), 'poppler', 'bin'),
+        os.path.join(os.path.dirname(__file__), 'poppler', 'poppler-24.08.0', 'Library', 'bin'),
+        os.path.join(os.path.dirname(__file__), 'poppler'),
+    ]
+    POPPLER_PATH = next((p for p in pop_candidates if os.path.exists(os.path.join(p, 'pdfinfo.exe'))), pop_candidates[0])
 else:
     # Linux (Docker / Cloud Run) — installed via apt-get
     pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
@@ -67,7 +89,10 @@ def extract_text(image_path):
         if image_path.lower().endswith('.pdf'):
             # DPI 150 is sufficient for most certs and ~40% faster than 200
             pages = convert_from_path(image_path, dpi=150, poppler_path=POPPLER_PATH)
-            image = pages[0]
+            if pages:
+                image = pages[0]
+            else:
+                return {'name': None, 'course': None, 'date': None, 'issued_by': None, 'raw_text': ''}
         else:
             image = Image.open(image_path)
             image.load()
