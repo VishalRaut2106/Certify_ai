@@ -44,7 +44,7 @@ if exist "dist"   rmdir /s /q dist
 
 :: ── Run PyInstaller ───────────────────────────────────────────────────────────
 echo [2/3] Building with PyInstaller...
-pyinstaller CertifyAI.spec --noconfirm
+python -m PyInstaller CertifyAI.spec --noconfirm
 
 if %errorlevel% neq 0 (
     echo.

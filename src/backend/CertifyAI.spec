@@ -97,21 +97,7 @@ hidden_imports = [
     'requests',
     'dotenv',
     'h11',
-    'email.message',
-    # Fix pyparsing issue - explicitly add the exact pkg_resources aliases
-    'pyparsing',
-    'packaging.version',
-    'packaging.specifiers',
-    'packaging.requirements',
-    'pkg_resources._vendor',
-    'pkg_resources._vendor.packaging',
-    'pkg_resources._vendor.packaging.requirements',
-    'pkg_resources._vendor.pyparsing',
-    'pkg_resources.extern',
-    'pkg_resources.extern.packaging',
-    'pkg_resources.extern.packaging.requirements',
-    'pkg_resources.extern.pyparsing',
-] + collect_submodules('pkg_resources') + collect_submodules('packaging')
+]
 
 a = Analysis(
     ['desktop_simple.py'],  # Use simple version without pywebview
@@ -123,6 +109,11 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
+        # Strip out packaging libraries to prevent buggy PyInstaller hooks
+        'pkg_resources',
+        'setuptools',
+        'packaging',
+        'pyparsing',
         # Heavy unused packages — remove to keep bundle small
         'scipy',
         'sklearn',

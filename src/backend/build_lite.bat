@@ -12,7 +12,7 @@ if exist "build"  rmdir /s /q build
 if exist "dist"   rmdir /s /q dist
 
 echo [2/3] Building with PyInstaller (Lite version)...
-pyinstaller CertifyAI_Lite.spec --noconfirm --clean
+python -m PyInstaller CertifyAI_Lite.spec --noconfirm --clean
 
 if %errorlevel% neq 0 (
     echo.
