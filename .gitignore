@@ -53,3 +53,6 @@ dist/
 src/backend/build/
 src/backend/dist/
 *.spec.bak
+
+backend/venv/
+backend/
